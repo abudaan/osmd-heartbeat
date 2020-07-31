@@ -1,0 +1,56 @@
+{
+  "name": "vexflow-test2",
+  "version": "1.0.0",
+  "description": "Groovy React Rebuild",
+  "main": "index.js",
+  "dependencies": {
+    "@types/ramda": "^0.26.9",
+    "@types/webmidi": "^2.0.3",
+    "heartbeat-sequencer": "0.0.20",
+    "opensheetmusicdisplay": "^0.7.1",
+    "ramda": "^0.26.1",
+    "rxjs": "^6.5.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-import-resolver-typescript": "^1.1.1",
+    "parcel": "^1.12.4",
+    "parcel-bundler": "^1.12.4",
+    "prettier": "^1.17.1",
+    "stylus": "^0.54.7",
+    "typescript": "^3.4.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint --fix",
+    "watch": "npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
+    "watch2": "parcel --port 3000 --no-hmr ./src/index.html",
+    "build": "parcel build --no-source-maps --public-url ./ ./src/index.html",
+    "copy": "cp -r ./assets ./dist/assets",
+    "clean": "rm -rf .cache/* && rm -rf dist/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/abudaan/groovy3.git"
+  },
+  "keywords": [
+    "Groovy",
+    "MIDI",
+    "React"
+  ],
+  "author": "abudaan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/abudaan/groovy3/issues"
+  },
+  "homepage": "https://gitlab.com/abudaan/groovy3#readme",
+  "browserslist": [
+    "since 2017-06"
+  ],
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  }
+}
