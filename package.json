@@ -7,9 +7,10 @@
     "@types/ramda": "^0.26.9",
     "@types/webmidi": "^2.0.3",
     "heartbeat-sequencer": "0.0.20",
-    "opensheetmusicdisplay": "^0.7.1",
+    "opensheetmusicdisplay": "^0.8.2",
     "ramda": "^0.26.1",
-    "rxjs": "^6.5.2"
+    "rxjs": "^6.5.2",
+    "webdaw-modules": "0.0.5"
   },
   "devDependencies": {
     "eslint": "^5.16.0",

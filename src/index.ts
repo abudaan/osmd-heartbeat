@@ -1,16 +1,22 @@
 import sequencer, { loadMusicXMLFile } from 'heartbeat-sequencer';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
+import {
+  parseMusicXML,
+  setGraphicalNoteColor,
+  getGraphicalNotesPerBar,
+  mapMIDINoteIdToGraphicalNote,
+} from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
-import { getNoteData, colorStaveNote, connect } from './osmd-utils';
-import { parse } from './musicxml';
 
 const c = document.getElementById('score');
+if (c === null) {
+  throw new Error('element not found');
+}
 const divLoading = document.getElementById('loading') as HTMLDivElement;
 const osmd = new OpenSheetMusicDisplay(c, {
   backend: 'svg',
   autoResize: true,
 });
-// window.openSheetMusicDisplay = openSheetMusicDisplay;
 
 const ppq = 960;
 const midiFile = 'mozk545a_musescore';
@@ -30,9 +36,7 @@ const init = async () => {
     track.setInstrument(srcName);
   });
 
-  // song.update();
   const xmlDoc = await loadMusicXMLFile('./assets/mozk545a_musescore.musicxml');
-  console.log(parse(xmlDoc, ppq));
   divLoading.innerHTML = 'loading musicxml';
   await osmd.load(xmlDoc);
   osmd.render();
@@ -41,50 +45,24 @@ const init = async () => {
   // console.log(notes);
   console.log(osmd);
   divLoading.innerHTML = 'parsing musicxml';
-  const data = await getNoteData(osmd, ppq);
+  const graphicalNotesPerBar = await getGraphicalNotesPerBar(osmd, ppq);
 
-  // console.log(data);
+  console.log(graphicalNotesPerBar);
   // console.log(song);
-  // console.log(data[0][0] instanceof Vex.Flow.StaveNote);
+  // console.log(graphicalNotesPerBar[0][0] instanceof Vex.Flow.StaveNote);
   divLoading.innerHTML = 'connecting heartbeat';
   console.time('connect_heartbeat');
   const events = song.events.filter(event => event.command === 144);
   // console.log(events);
   const numNotes = events.length;
-  // const flattened = data.flat();
-  // console.log(flattened);
-  // const numData = flattened.length;
-  const numBars = data.length;
-  let repeat1 = [-1, 27];
-  let repeat2 = [27, 72];
-  let repeated1 = false;
-  let repeated2 = false;
-  let songEnd = false;
-  let barIndex = -1;
-  let ticksOffset = 0;
-  while (songEnd === false) {
-    barIndex++;
-    // console.log(barIndex);
-    if (barIndex === repeat1[1]) {
-      connect(data[barIndex], ticksOffset, events, numNotes);
-      if (repeated1 === false) {
-        barIndex = repeat1[0];
-        repeated1 = true;
-        ticksOffset += (repeat1[1] - repeat1[0]) * 4 * ppq;
-      }
-    } else if (barIndex === repeat2[1]) {
-      connect(data[barIndex], ticksOffset, events, numNotes);
-      if (repeated2 === false) {
-        barIndex = repeat2[0];
-        repeated2 = true;
-        ticksOffset += (repeat2[1] - repeat2[0]) * 4 * ppq;
-      } else {
-        songEnd = true;
-      }
-    } else {
-      connect(data[barIndex], ticksOffset, events, numNotes);
-    }
+  const numBars = graphicalNotesPerBar.length;
+  const parsed = parseMusicXML(xmlDoc, ppq);
+  if (parsed === null) {
+    return;
   }
+  const { repeats, initialTempo } = parsed;
+  const mapping = mapMIDINoteIdToGraphicalNote(graphicalNotesPerBar, repeats, song.notes);
+  console.log(mapping);
 
   console.timeEnd('connect_heartbeat');
   // console.log(song.events);
@@ -99,15 +77,18 @@ const init = async () => {
   let reference = -1;
   const height = window.innerHeight;
   song.addEventListener('event', 'type = NOTE_ON', event => {
-    if (event.vfnote) {
-      const el = event.vfnote.attrs.el;
-      colorStaveNote(el, 'red');
+    const noteId = event.midiNote.id;
+    // console.log(event.midiNote.noteOn);
+    // console.log(noteId, mapping[noteId]);
+    if (mapping[noteId]) {
+      const { element, musicSystem } = mapping[noteId];
+      setGraphicalNoteColor(element, 'red');
 
-      const tmp = event.musicSystem.graphicalMeasures[0][0].stave.y;
+      const tmp = musicSystem.graphicalMeasures[0][0].stave.y;
       if (currentY !== tmp) {
         currentY = tmp;
-        const bbox = el.getBoundingClientRect();
-        console.log(bbox.y, window.pageYOffset);
+        const bbox = element.getBoundingClientRect();
+        // console.log(bbox.y, window.pageYOffset);
         if (reference === -1) {
           reference = bbox.y;
         } else {
@@ -122,10 +103,10 @@ const init = async () => {
   });
 
   song.addEventListener('event', 'type = NOTE_OFF', event => {
-    const noteOn = event.midiNote.noteOn;
-    if (noteOn.vfnote) {
-      const el = noteOn.vfnote.attrs.el;
-      colorStaveNote(el, 'black');
+    const noteId = event.midiNote.id;
+    if (mapping[noteId]) {
+      const { element } = mapping[noteId];
+      setGraphicalNoteColor(element, 'black');
     }
   });
 
