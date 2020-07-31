@@ -1,6 +1,6 @@
 ### Connect OSMD to heartbeat
 
-This version uses an older version of the MusixXML parser that does not detect repeats. You may want to use the [the newer version](https://github.com/abudaan/webdaw-modules/tree/master/src/musicxml) instead, this requires a bit of rewiring though.
+This version uses the MusicXML parser and the OSMD modules of [WebDAW](https://github.com/abudaan/webdaw-modules) and [heartbeat](https://github.com/abudaan/heartbeat) for MIDI playback.
 
 Live example:
 
