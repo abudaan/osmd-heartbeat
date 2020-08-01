@@ -117,7 +117,7 @@ const init = async () => {
       const midiNote = graphicalToMidi[element.id];
       const noteOn = midiNote.noteOn as MIDIEvent;
       const noteOff = midiNote.noteOff as MIDIEvent;
-      // song.tracks[0].processMidiEvent(midiNote.noteOn as MIDIEvent);
+      setGraphicalNoteColor(element, 'red');
       sequencer.processEvent(
         [
           sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
@@ -129,6 +129,7 @@ const init = async () => {
     });
     element.addEventListener('mouseup', e => {
       sequencer.stopProcessEvents();
+      setGraphicalNoteColor(element, 'black');
     });
   });
 
