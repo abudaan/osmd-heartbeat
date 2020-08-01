@@ -1,16 +1,16 @@
 {
-  "name": "vexflow-test2",
+  "name": "osmd-heartbeat",
   "version": "1.0.0",
-  "description": "Groovy React Rebuild",
+  "description": "connecting OSMD score to heartbeat MIDI playback",
   "main": "index.js",
   "dependencies": {
     "@types/ramda": "^0.26.9",
     "@types/webmidi": "^2.0.3",
-    "heartbeat-sequencer": "0.0.20",
+    "heartbeat-sequencer": "0.0.21",
     "opensheetmusicdisplay": "^0.8.2",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
-    "webdaw-modules": "0.0.7"
+    "webdaw-modules": "0.0.8"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
@@ -35,7 +35,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/abudaan/groovy3.git"
+    "url": "git+ssh://git@gitlab.com/abudaan/osmd-heartbeat.git"
   },
   "keywords": [
     "Groovy",
@@ -45,9 +45,9 @@
   "author": "abudaan",
   "license": "MIT",
   "bugs": {
-    "url": "https://gitlab.com/abudaan/groovy3/issues"
+    "url": "https://gitlab.com/abudaan/osmd-heartbeat/issues"
   },
-  "homepage": "https://gitlab.com/abudaan/groovy3#readme",
+  "homepage": "https://gitlab.com/abudaan/osmd-heartbeat#readme",
   "browserslist": [
     "since 2017-06"
   ],

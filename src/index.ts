@@ -1,4 +1,4 @@
-import sequencer, { loadMusicXMLFile } from 'heartbeat-sequencer';
+import sequencer, { loadMusicXMLFile, MIDIEvent } from 'heartbeat-sequencer';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import {
   parseMusicXML,
@@ -66,7 +66,12 @@ const init = async () => {
   const { repeats, initialTempo } = parsed;
 
   // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
-  const mapping = mapMIDINoteIdToGraphicalNote(graphicalNotesPerBar, repeats, song.notes);
+  const { midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNote(
+    graphicalNotesPerBar,
+    repeats,
+    song.notes
+  );
+  console.log(midiToGraphical);
   console.timeEnd('connect_heartbeat');
   divLoading.style.display = 'none';
 
@@ -76,8 +81,8 @@ const init = async () => {
   let reference = -1;
   song.addEventListener('event', 'type = NOTE_ON', event => {
     const noteId = event.midiNote.id;
-    if (mapping[noteId]) {
-      const { element, musicSystem } = mapping[noteId];
+    if (midiToGraphical[noteId]) {
+      const { element, musicSystem } = midiToGraphical[noteId];
       setGraphicalNoteColor(element, 'red');
 
       const tmp = musicSystem.graphicalMeasures[0][0].stave.y;
@@ -100,12 +105,34 @@ const init = async () => {
   // setup listener to switch of the highlighting if notes are not active anymore
   song.addEventListener('event', 'type = NOTE_OFF', event => {
     const noteId = event.midiNote.id;
-    if (mapping[noteId]) {
-      const { element } = mapping[noteId];
+    if (midiToGraphical[noteId]) {
+      const { element } = midiToGraphical[noteId];
       setGraphicalNoteColor(element, 'black');
     }
   });
 
+  // setup listeners for every graphical note
+  Object.values(midiToGraphical).forEach(({ element }) => {
+    element.addEventListener('mousedown', e => {
+      const midiNote = graphicalToMidi[element.id];
+      const noteOn = midiNote.noteOn as MIDIEvent;
+      const noteOff = midiNote.noteOff as MIDIEvent;
+      // song.tracks[0].processMidiEvent(midiNote.noteOn as MIDIEvent);
+      sequencer.processEvent(
+        [
+          sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
+          sequencer.createMidiEvent(noteOff.ticks - noteOn.ticks, 128, noteOff.noteNumber, 0),
+        ],
+        instrumentName
+      );
+      e.stopImmediatePropagation();
+    });
+    element.addEventListener('mouseup', e => {
+      sequencer.stopProcessEvents();
+    });
+  });
+
+  // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
   });
