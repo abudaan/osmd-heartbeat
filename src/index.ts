@@ -8,78 +8,74 @@ import {
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
-const c = document.getElementById('score');
-if (c === null) {
+const ppq = 960;
+const midiFile = 'mozk545a_musescore';
+const instrumentName = 'TP00-PianoStereo';
+
+const btnPlay = document.getElementById('play') as HTMLButtonElement;
+const btnStop = document.getElementById('stop') as HTMLButtonElement;
+const scoreDiv = document.getElementById('score');
+const divLoading = document.getElementById('loading') as HTMLDivElement;
+if (scoreDiv === null) {
   throw new Error('element not found');
 }
-const divLoading = document.getElementById('loading') as HTMLDivElement;
-const osmd = new OpenSheetMusicDisplay(c, {
+
+const osmd = new OpenSheetMusicDisplay(scoreDiv, {
   backend: 'svg',
   autoResize: true,
 });
 
-const ppq = 960;
-const midiFile = 'mozk545a_musescore';
 const init = async () => {
   await sequencer.ready();
-  await loadMIDIFile(`./assets/${midiFile}.mid`);
+
+  // load MIDI file and setup song
+  await loadMIDIFile(`../assets/${midiFile}.mid`);
   const song = sequencer.createSong(sequencer.getMidiFile(midiFile));
 
-  const srcName = 'TP00-PianoStereo';
-  let url = `assets/${srcName}.mp3.json`;
+  // load instrument and setup all tracks
+  let url = `../assets/${instrumentName}.mp3.json`;
   if (sequencer.browser === 'firefox') {
-    url = `assets/${srcName}.ogg.json`;
+    url = `../assets/${instrumentName}.ogg.json`;
   }
   const json = await loadJSON(url);
   await addAssetPack(json);
   song.tracks.forEach(track => {
-    track.setInstrument(srcName);
+    track.setInstrument(instrumentName);
   });
 
-  const xmlDoc = await loadMusicXMLFile('./assets/mozk545a_musescore.musicxml');
+  // load and render the score
+  const xmlDoc = await loadMusicXMLFile('../assets/mozk545a_musescore.musicxml');
   divLoading.innerHTML = 'loading musicxml';
   await osmd.load(xmlDoc);
   osmd.render();
-
-  // const notes = c.getElementsByClassName('vf-stavenote');
-  // console.log(notes);
-  console.log(osmd);
   divLoading.innerHTML = 'parsing musicxml';
+
+  // once the score has been rendered we get all references to the SVGElement of the notes
   const graphicalNotesPerBar = await getGraphicalNotesPerBar(osmd, ppq);
 
-  console.log(graphicalNotesPerBar);
-  // console.log(song);
-  // console.log(graphicalNotesPerBar[0][0] instanceof Vex.Flow.StaveNote);
+  // connect the OSMD score to heartbeat
   divLoading.innerHTML = 'connecting heartbeat';
   console.time('connect_heartbeat');
   const events = song.events.filter(event => event.command === 144);
-  // console.log(events);
-  const numNotes = events.length;
-  const numBars = graphicalNotesPerBar.length;
+
+  // parse the MusicXML file to find where the song repeats
   const parsed = parseMusicXML(xmlDoc, ppq);
   if (parsed === null) {
     return;
   }
   const { repeats, initialTempo } = parsed;
+
+  // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
   const mapping = mapMIDINoteIdToGraphicalNote(graphicalNotesPerBar, repeats, song.notes);
-  console.log(mapping);
-
   console.timeEnd('connect_heartbeat');
-  // console.log(song.events);
   divLoading.style.display = 'none';
-  const btnPlay = document.getElementById('play') as HTMLButtonElement;
-  const btnStop = document.getElementById('stop') as HTMLButtonElement;
-  btnPlay.disabled = true;
-  btnStop.disabled = true;
 
+  // setup listener for highlighting the active notes and for the scroll position
   let scrollPos = 0;
   let currentY = 0;
   let reference = -1;
-  const height = window.innerHeight;
   song.addEventListener('event', 'type = NOTE_ON', event => {
     const noteId = event.midiNote.id;
-    // console.log(event.midiNote.noteOn);
-    // console.log(noteId, mapping[noteId]);
     if (mapping[noteId]) {
       const { element, musicSystem } = mapping[noteId];
       setGraphicalNoteColor(element, 'red');
@@ -88,7 +84,6 @@ const init = async () => {
       if (currentY !== tmp) {
         currentY = tmp;
         const bbox = element.getBoundingClientRect();
-        // console.log(bbox.y, window.pageYOffset);
         if (reference === -1) {
           reference = bbox.y;
         } else {
@@ -102,6 +97,7 @@ const init = async () => {
     }
   });
 
+  // setup listener to switch of the highlighting if notes are not active anymore
   song.addEventListener('event', 'type = NOTE_OFF', event => {
     const noteId = event.midiNote.id;
     if (mapping[noteId]) {
@@ -120,21 +116,20 @@ const init = async () => {
     btnPlay.innerHTML = 'play';
   });
 
-  btnPlay.disabled = false;
-  btnStop.disabled = false;
-
   btnPlay.addEventListener('click', () => {
     if (song.playing) {
-      // btnPlay.innerHTML = 'play';
       song.pause();
     } else {
-      // btnPlay.innerHTML = 'pause';
       song.play();
     }
   });
   btnStop.addEventListener('click', () => {
     song.stop();
   });
+
+  // everything has been setup so we can enable the buttons
+  btnPlay.disabled = false;
+  btnStop.disabled = false;
 };
 
 init();

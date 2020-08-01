@@ -27,9 +27,11 @@
     "lint": "eslint --fix",
     "watch": "npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
     "watch2": "parcel --port 3000 --no-hmr ./src/index.html",
-    "build": "parcel build --no-source-maps --public-url ./ ./src/index.html",
+    "parcel-build": "parcel build --no-source-maps --public-url ./ --out-dir ./public ./src/index.html",
     "copy": "cp -r ./assets ./dist/assets",
-    "clean": "rm -rf .cache/* && rm -rf dist/*"
+    "clean": "rm -rf .cache/* && rm -rf dist/*",
+    "clean2": "rm -rf public",
+    "build": "npm run clean2 && npm run parcel-build"
   },
   "repository": {
     "type": "git",

@@ -4,4 +4,4 @@ This version uses the MusicXML parser and the OSMD modules of [WebDAW](https://g
 
 Live example:
 
-<https://abudaan.github.io/osmd-heartbeat/dist>
+<https://abudaan.github.io/osmd-heartbeat/public>
