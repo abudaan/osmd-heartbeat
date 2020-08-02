@@ -25,7 +25,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --fix",
-    "watch1": "npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
     "watch": "npm run convert-package-json-dev && npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
     "watch1": "npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
     "watch2": "parcel --port 3000 --no-hmr ./src/index.html",
