@@ -5,6 +5,11 @@ body
   width 100%
   background-color aliceblue
 
+.unselectable 
+  -moz-user-select none; 
+  -khtml-user-select none; 
+  -webkit-user-select none; 
+
 #app
   width 100%
   min-height 100vh
@@ -28,3 +33,9 @@ body
     // padding 4px
     // margin -4px 0 0 -4px
     // border-radius 4px
+
+#selection 
+  z-index 100
+  position absolute
+  background-color rgba(0,0,200, 0.1)
+  display none
