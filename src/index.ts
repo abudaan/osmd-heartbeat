@@ -71,7 +71,7 @@ const init = async () => {
     repeats,
     song.notes
   );
-  console.log(midiToGraphical);
+  // console.log(midiToGraphical);
   console.timeEnd('connect_heartbeat');
   divLoading.style.display = 'none';
 
@@ -117,14 +117,18 @@ const init = async () => {
       const midiNote = graphicalToMidi[element.id];
       const noteOn = midiNote.noteOn as MIDIEvent;
       const noteOff = midiNote.noteOff as MIDIEvent;
-      setGraphicalNoteColor(element, 'red');
-      sequencer.processEvent(
-        [
-          sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
-          sequencer.createMidiEvent(noteOff.ticks - noteOn.ticks, 128, noteOff.noteNumber, 0),
-        ],
-        instrumentName
-      );
+      if (e.ctrlKey) {
+        song.setPlayhead('ticks', noteOn.ticks);
+      } else {
+        setGraphicalNoteColor(element, 'red');
+        sequencer.processEvent(
+          [
+            sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
+            sequencer.createMidiEvent(noteOff.ticks - noteOn.ticks, 128, noteOff.noteNumber, 0),
+          ],
+          instrumentName
+        );
+      }
       e.stopImmediatePropagation();
     });
     element.addEventListener('mouseup', e => {
