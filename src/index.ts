@@ -25,8 +25,8 @@ const osmd = new OpenSheetMusicDisplay(scoreDiv, {
   backend: 'svg',
   autoResize: false,
 });
-console.log(`OSMD : ${osmd.Version}`);
-console.log(`WebDAW : ${getVersion()}`);
+console.log(`OSMD: ${osmd.Version}`);
+console.log(`WebDAW: ${getVersion()}`);
 
 const resize = async (song: Song, repeats: number[][]) => {
   osmd.render();
@@ -40,8 +40,6 @@ const resize = async (song: Song, repeats: number[][]) => {
     repeats,
     song.notes
   );
-  // console.log(midiToGraphical);
-  console.timeEnd('connect_heartbeat');
 
   // setup listener for highlighting the active notes and for the scroll position
   let scrollPos = 0;
@@ -125,13 +123,9 @@ const init = async () => {
     track.setInstrument(instrumentName);
   });
 
-  // load and render the score
+  // load MusicXML
   const xmlDoc = await loadMusicXMLFile('../assets/mozk545a_musescore.musicxml');
   await osmd.load(xmlDoc);
-
-  // connect the OSMD score to heartbeat
-  console.time('connect_heartbeat');
-  const events = song.events.filter(event => event.command === 144);
 
   // parse the MusicXML file to find where the song repeats
   const parsed = parseMusicXML(xmlDoc, ppq);
@@ -139,6 +133,8 @@ const init = async () => {
     return;
   }
   const { repeats, initialTempo } = parsed;
+
+  // the score gets rendered every time the window resizes; here we force the first render
   await resize(song, repeats);
 
   // setup controls
