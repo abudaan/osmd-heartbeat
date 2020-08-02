@@ -29,12 +29,15 @@ let graphicalNotesPerBar: GraphicalNoteData[][];
 let song: Song;
 let repeats: number[][];
 let initialTempo: number;
+let scoreDivOffsetX: number = 0;
+let scoreDivOffsetY: number = 0;
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
 const scoreDiv = document.getElementById('score');
+const loadingDiv = document.getElementById('loading');
 const selectionDiv = document.getElementById('selection');
-if (scoreDiv === null || selectionDiv === null) {
+if (scoreDiv === null || selectionDiv === null || loadingDiv === null) {
   throw new Error('element not found');
 }
 
@@ -55,6 +58,8 @@ const resetScore = () => {
 
 const resize = async () => {
   osmd.render();
+  scoreDivOffsetX = scoreDiv.offsetLeft;
+  scoreDivOffsetY = scoreDiv.offsetTop;
   // the score has been rendered so we can get all references to the SVGElement of the notes
   graphicalNotesPerBar = await getGraphicalNotesPerBar(osmd, ppq);
   // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
@@ -177,6 +182,7 @@ const init = async () => {
   // everything has been setup so we can enable the buttons
   btnPlay.disabled = false;
   btnStop.disabled = false;
+  loadingDiv.style.display = 'none';
 
   window.addEventListener('resize', async () => {
     await resize();
@@ -201,7 +207,17 @@ const init = async () => {
     selectionDiv.style.top = '0px';
     selectionDiv.style.width = '0px';
     selectionDiv.style.height = '0px';
-    getGraphicalNotesInSelection(graphicalNotesPerBar, selectionStartPoint, selectionEndPoint);
+    getGraphicalNotesInSelection(
+      graphicalNotesPerBar,
+      {
+        x: selectionStartPoint.x - scoreDivOffsetX,
+        y: selectionStartPoint.y - scoreDivOffsetY,
+      },
+      {
+        x: selectionEndPoint.x - scoreDivOffsetX,
+        y: selectionEndPoint.y - scoreDivOffsetY,
+      }
+    );
   };
 
   const startSelect = (e: MouseEvent) => {
