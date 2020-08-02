@@ -5,6 +5,8 @@ import {
   setGraphicalNoteColor,
   getGraphicalNotesPerBar,
   mapMIDINoteIdToGraphicalNote,
+  MusicSystemShim,
+  getVersion,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
@@ -24,6 +26,8 @@ const osmd = new OpenSheetMusicDisplay(scoreDiv, {
   backend: 'svg',
   autoResize: true,
 });
+console.log(osmd.Version);
+console.log(`WebDAW : ${getVersion()}`);
 
 const init = async () => {
   await sequencer.ready();
@@ -85,7 +89,7 @@ const init = async () => {
       const { element, musicSystem } = midiToGraphical[noteId];
       setGraphicalNoteColor(element, 'red');
 
-      const tmp = musicSystem.graphicalMeasures[0][0].stave.y;
+      const tmp = ((musicSystem as unknown) as MusicSystemShim).graphicalMeasures[0][0].stave.y;
       if (currentY !== tmp) {
         currentY = tmp;
         const bbox = element.getBoundingClientRect();
