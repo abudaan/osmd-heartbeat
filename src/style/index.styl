@@ -4,6 +4,8 @@ body
   // overflow hidden
   width 100%
   background-color aliceblue
+  padding 0
+  margin 0
 
 .unselectable 
   -moz-user-select none; 
@@ -39,3 +41,13 @@ body
   position absolute
   background-color rgba(0,0,200, 0.1)
   display none
+
+#selected-bars
+  z-index 100
+  position absolute
+  display none
+  .bar
+    background-color rgba(0,0,200, 0.1)
+    position absolute
+
+

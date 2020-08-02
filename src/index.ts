@@ -15,7 +15,8 @@ import {
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
 const ppq = 960;
-// const midiFile = '../assets/mozk545a_musescore.mid';
+// const midiFileName = 'mozk545a';
+// const midiFile = '../assets/mozk545a.mid';
 // const mxmlFile = '../assets/mozk545a_musescore.musicxml';
 const midiFileName = 'spring';
 const midiFile = '../assets/spring.mid';
@@ -37,7 +38,8 @@ const btnStop = document.getElementById('stop') as HTMLButtonElement;
 const scoreDiv = document.getElementById('score');
 const loadingDiv = document.getElementById('loading');
 const selectionDiv = document.getElementById('selection');
-if (scoreDiv === null || selectionDiv === null || loadingDiv === null) {
+const selectedBarsDiv = document.getElementById('selected-bars');
+if (scoreDiv === null || selectionDiv === null || loadingDiv === null || selectedBarsDiv === null) {
   throw new Error('element not found');
 }
 
@@ -168,17 +170,20 @@ const init = async () => {
     btnPlay.innerHTML = 'play';
   });
 
-  btnPlay.addEventListener('click', () => {
+  btnPlay.addEventListener('click', e => {
+    e.stopImmediatePropagation();
     if (song.playing) {
       song.pause();
     } else {
       song.play();
     }
   });
-  btnStop.addEventListener('click', () => {
+  btnStop.addEventListener('click', e => {
+    e.stopImmediatePropagation();
     song.stop();
     resetScore();
   });
+
   // everything has been setup so we can enable the buttons
   btnPlay.disabled = false;
   btnStop.disabled = false;
@@ -200,6 +205,7 @@ const init = async () => {
   };
 
   const stopSelect = (e: MouseEvent) => {
+    // document.removeEventListener('mousedown', startSelect);
     document.removeEventListener('mouseup', stopSelect);
     document.removeEventListener('mousemove', drawSelect);
     selectionDiv.style.display = 'none';
@@ -207,7 +213,7 @@ const init = async () => {
     selectionDiv.style.top = '0px';
     selectionDiv.style.width = '0px';
     selectionDiv.style.height = '0px';
-    getGraphicalNotesInSelection(
+    const selectedBarRects = getGraphicalNotesInSelection(
       graphicalNotesPerBar,
       {
         x: selectionStartPoint.x - scoreDivOffsetX,
@@ -218,9 +224,39 @@ const init = async () => {
         y: selectionEndPoint.y - scoreDivOffsetY,
       }
     );
+    // selectedBarsDiv.style.display = 'none';
+    while (selectedBarsDiv.firstChild) {
+      selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
+    }
+    if (selectedBarRects.length > 0) {
+      selectedBarsDiv.style.display = 'block';
+      selectedBarRects.forEach(rect => {
+        const d = document.createElement('div');
+        d.className = 'bar';
+        d.style.left = `${rect.left + scoreDivOffsetX}px`;
+        d.style.top = `${rect.top + scoreDivOffsetY}px`;
+        d.style.height = `${rect.bottom - rect.top}px`;
+        d.style.width = `${rect.right - rect.left}px`;
+        selectedBarsDiv.appendChild(d);
+      });
+      let left = selectedBarRects[0].measureNumber;
+      let right = selectedBarRects[selectedBarRects.length - 1].measureNumber + 1;
+      const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
+      const rightPos = song.getPosition('barsbeats', right, 1, 1, 0);
+      song.setLeftLocator('ticks', leftPos.ticks);
+      song.setRightLocator('ticks', rightPos.ticks);
+      song.setPlayhead('ticks', leftPos.ticks);
+      song.setLoop(true);
+      resetScore();
+    } else {
+      song.setLoop(false);
+    }
   };
 
   const startSelect = (e: MouseEvent) => {
+    if (e.target === btnPlay || e.target === btnStop) {
+      return;
+    }
     selectionStartPoint.x = e.clientX;
     selectionStartPoint.y = e.clientY;
     selectionDiv.style.display = 'block';
@@ -228,6 +264,7 @@ const init = async () => {
     document.addEventListener('mousemove', drawSelect);
   };
 
+  // song.setTempo(200);
   document.addEventListener('mousedown', startSelect);
 };
 
