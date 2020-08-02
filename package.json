@@ -32,7 +32,7 @@
     "clean": "rm -rf .cache/* && rm -rf dist/*",
     "clean2": "rm -rf public",
     "build": "npm run clean2 && npm run parcel-build && npm run convert-package-json-pub",
-    "convert-package-json-pub": "cd ./util && npm run pub",
+    "convert-package-json-pub": "cd ./util && npm run pub 0.0.21 0.0.8",
     "convert-package-json-dev": "cd ./util && npm run dev"
   },
   "repository": {

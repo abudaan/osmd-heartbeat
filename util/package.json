@@ -18,8 +18,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --fix",
-    "dev": "node_modules/.bin/ts-node convert.ts true",
-    "pub": "node_modules/.bin/ts-node convert.ts false"
+    "dev": "node_modules/.bin/ts-node convert.ts dev",
+    "pub": "node_modules/.bin/ts-node convert.ts pub"
   },
   "repository": {
     "type": "git",
