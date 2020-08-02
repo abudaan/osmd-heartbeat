@@ -7,6 +7,7 @@ import {
   mapMIDINoteIdToGraphicalNote,
   MusicSystemShim,
   getVersion,
+  NoteMappingMIDIToGraphical,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
@@ -27,6 +28,14 @@ const osmd = new OpenSheetMusicDisplay(scoreDiv, {
 });
 console.log(`OSMD: ${osmd.Version}`);
 console.log(`WebDAW: ${getVersion()}`);
+
+// reset all highlighted notes
+const resetScore = (midiToGraphical: NoteMappingMIDIToGraphical) => {
+  Object.values(midiToGraphical).forEach(g => {
+    const { element } = g;
+    setGraphicalNoteColor(element, 'black');
+  });
+};
 
 const resize = async (song: Song, repeats: number[][]) => {
   osmd.render();
@@ -85,6 +94,8 @@ const resize = async (song: Song, repeats: number[][]) => {
       const noteOff = midiNote.noteOff as MIDIEvent;
       if (e.ctrlKey) {
         song.setPlayhead('ticks', noteOn.ticks);
+        resetScore(midiToGraphical);
+        setGraphicalNoteColor(element, 'red');
       } else {
         setGraphicalNoteColor(element, 'red');
         console.log(element);
