@@ -12,6 +12,6 @@
     "baseUrl": ".",
     "target": "es5"
   },
-  "include": ["src"],
+  "include": ["src", "../WebDAW/src/types.ts"],
   "exclude": ["dist", "node_modules", ".cache"]
 }

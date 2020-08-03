@@ -1,4 +1,4 @@
-import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
+import { OpenSheetMusicDisplay, GraphicalVoiceEntry } from 'opensheetmusicdisplay';
 import sequencer, { loadMusicXMLFile, MIDIEvent, Song } from 'heartbeat-sequencer';
 import {
   parseMusicXML,
@@ -8,19 +8,25 @@ import {
   MusicSystemShim,
   getVersion,
   NoteMappingMIDIToGraphical,
-  getGraphicalNotesInSelection,
+  getSelectedMeasures,
+  getSelectedMeasureBoundingBoxes,
   NoteMappingGraphicalToMIDI,
   GraphicalNoteData,
+  GraphicalMeasureShim,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
+import { resize } from './resize';
 
 const ppq = 960;
 // const midiFileName = 'mozk545a';
 // const midiFile = '../assets/mozk545a.mid';
 // const mxmlFile = '../assets/mozk545a_musescore.musicxml';
-const midiFileName = 'spring';
-const midiFile = '../assets/spring.mid';
-const mxmlFile = '../assets/spring.xml';
+const midiFileName = 'mozk545a_2-bars';
+const midiFile = '../assets/mozk545a_2-bars.mid';
+const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+// const midiFileName = 'spring';
+// const midiFile = '../assets/spring.mid';
+// const mxmlFile = '../assets/spring.xml';
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
 const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
@@ -32,6 +38,7 @@ let repeats: number[][];
 let initialTempo: number;
 let scoreDivOffsetX: number = 0;
 let scoreDivOffsetY: number = 0;
+let selectedBarNumbers: number[] = [2, 3];
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
@@ -58,81 +65,6 @@ const resetScore = () => {
   });
 };
 
-const resize = async () => {
-  osmd.render();
-  scoreDivOffsetX = scoreDiv.offsetLeft;
-  scoreDivOffsetY = scoreDiv.offsetTop;
-  // the score has been rendered so we can get all references to the SVGElement of the notes
-  graphicalNotesPerBar = await getGraphicalNotesPerBar(osmd, ppq);
-  // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
-  ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNote(
-    graphicalNotesPerBar,
-    repeats,
-    song.notes
-  ));
-  // setup listener for highlighting the active notes and for the scroll position
-  let scrollPos = 0;
-  let currentY = 0;
-  let reference = -1;
-  song.addEventListener('event', 'type = NOTE_ON', (event: MIDIEvent) => {
-    const noteId = event.midiNote.id;
-    if (midiToGraphical[noteId]) {
-      const { element, musicSystem } = midiToGraphical[noteId];
-      setGraphicalNoteColor(element, 'red');
-      const tmp = ((musicSystem as unknown) as MusicSystemShim).graphicalMeasures[0][0].stave.y;
-      if (currentY !== tmp) {
-        currentY = tmp;
-        const bbox = element.getBoundingClientRect();
-        if (reference === -1) {
-          reference = bbox.y;
-        } else {
-          scrollPos = bbox.y + window.pageYOffset - reference;
-          window.scroll({
-            top: scrollPos,
-            behavior: 'smooth',
-          });
-        }
-      }
-    }
-  });
-  // setup listener to switch of the highlighting if notes are not active anymore
-  song.addEventListener('event', 'type = NOTE_OFF', (event: MIDIEvent) => {
-    const noteId = event.midiNote.id;
-    if (midiToGraphical[noteId]) {
-      const { element } = midiToGraphical[noteId];
-      setGraphicalNoteColor(element, 'black');
-    }
-  });
-  // setup listeners for every graphical note
-  Object.values(midiToGraphical).forEach(({ element }) => {
-    element.addEventListener('mousedown', e => {
-      const midiNote = graphicalToMidi[element.id];
-      const noteOn = midiNote.noteOn as MIDIEvent;
-      const noteOff = midiNote.noteOff as MIDIEvent;
-      if (e.ctrlKey) {
-        song.setPlayhead('ticks', noteOn.ticks);
-        resetScore();
-        setGraphicalNoteColor(element, 'red');
-      } else {
-        setGraphicalNoteColor(element, 'red');
-        console.log(element);
-        sequencer.processEvent(
-          [
-            sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
-            sequencer.createMidiEvent(noteOff.ticks - noteOn.ticks, 128, noteOff.noteNumber, 0),
-          ],
-          instrumentName
-        );
-      }
-      e.stopImmediatePropagation();
-    });
-    element.addEventListener('mouseup', e => {
-      sequencer.stopProcessEvents();
-      setGraphicalNoteColor(element, 'black');
-    });
-  });
-};
-
 const init = async () => {
   await sequencer.ready();
   // load MIDI file and setup song
@@ -151,6 +83,7 @@ const init = async () => {
   // load MusicXML
   const xmlDoc = await loadMusicXMLFile(mxmlFile);
   await osmd.load(xmlDoc);
+
   // parse the MusicXML file to find where the song repeats
   const parsed = parseMusicXML(xmlDoc, ppq);
   if (parsed === null) {
@@ -158,14 +91,17 @@ const init = async () => {
   }
   ({ repeats, initialTempo } = parsed);
   // the score gets rendered every time the window resizes; here we force the first render
-  await resize();
+  await resize({ osmd, scoreDiv });
+
   // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
   });
+
   song.addEventListener('play', () => {
     btnPlay.innerHTML = 'pause';
   });
+
   song.addEventListener('end', () => {
     btnPlay.innerHTML = 'play';
   });
@@ -178,6 +114,7 @@ const init = async () => {
       song.play();
     }
   });
+
   btnStop.addEventListener('click', e => {
     e.stopImmediatePropagation();
     song.stop();
@@ -190,79 +127,8 @@ const init = async () => {
   loadingDiv.style.display = 'none';
 
   window.addEventListener('resize', async () => {
-    await resize();
+    await resize({ osmd, scoreDiv });
   });
-
-  const selectionStartPoint: { x: number; y: number } = { x: -1, y: -1 };
-  const selectionEndPoint: { x: number; y: number } = { x: -1, y: -1 };
-  const drawSelect = (e: MouseEvent) => {
-    selectionDiv.style.left = `${selectionStartPoint.x}px`;
-    selectionDiv.style.top = `${selectionStartPoint.y}px`;
-    selectionDiv.style.width = `${e.clientX - selectionStartPoint.x}px`;
-    selectionDiv.style.height = `${e.clientY - selectionStartPoint.y}px`;
-    selectionEndPoint.x = e.clientX;
-    selectionEndPoint.y = e.clientY;
-  };
-
-  const stopSelect = (e: MouseEvent) => {
-    // document.removeEventListener('mousedown', startSelect);
-    document.removeEventListener('mouseup', stopSelect);
-    document.removeEventListener('mousemove', drawSelect);
-    selectionDiv.style.display = 'none';
-    selectionDiv.style.left = '0px';
-    selectionDiv.style.top = '0px';
-    selectionDiv.style.width = '0px';
-    selectionDiv.style.height = '0px';
-    const selectedBarRects = getGraphicalNotesInSelection(
-      graphicalNotesPerBar,
-      {
-        x: selectionStartPoint.x - scoreDivOffsetX,
-        y: selectionStartPoint.y - scoreDivOffsetY,
-      },
-      {
-        x: selectionEndPoint.x - scoreDivOffsetX,
-        y: selectionEndPoint.y - scoreDivOffsetY,
-      }
-    );
-    // selectedBarsDiv.style.display = 'none';
-    while (selectedBarsDiv.firstChild) {
-      selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
-    }
-    if (selectedBarRects.length > 0) {
-      selectedBarsDiv.style.display = 'block';
-      selectedBarRects.forEach(rect => {
-        const d = document.createElement('div');
-        d.className = 'bar';
-        d.style.left = `${rect.left + scoreDivOffsetX}px`;
-        d.style.top = `${rect.top + scoreDivOffsetY}px`;
-        d.style.height = `${rect.bottom - rect.top}px`;
-        d.style.width = `${rect.right - rect.left}px`;
-        selectedBarsDiv.appendChild(d);
-      });
-      let left = selectedBarRects[0].measureNumber;
-      let right = selectedBarRects[selectedBarRects.length - 1].measureNumber + 1;
-      const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
-      const rightPos = song.getPosition('barsbeats', right, 1, 1, 0);
-      song.setLeftLocator('ticks', leftPos.ticks);
-      song.setRightLocator('ticks', rightPos.ticks);
-      song.setPlayhead('ticks', leftPos.ticks);
-      song.setLoop(true);
-      resetScore();
-    } else {
-      song.setLoop(false);
-    }
-  };
-
-  const startSelect = (e: MouseEvent) => {
-    if (e.target === btnPlay || e.target === btnStop) {
-      return;
-    }
-    selectionStartPoint.x = e.clientX;
-    selectionStartPoint.y = e.clientY;
-    selectionDiv.style.display = 'block';
-    document.addEventListener('mouseup', stopSelect);
-    document.addEventListener('mousemove', drawSelect);
-  };
 
   // song.setTempo(200);
   document.addEventListener('mousedown', startSelect);
