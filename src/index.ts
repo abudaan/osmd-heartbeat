@@ -1,5 +1,11 @@
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
-import sequencer, { loadMusicXMLFile, MIDIEvent, Song } from 'heartbeat-sequencer';
+import sequencer, {
+  loadMusicXMLFile,
+  MIDIEvent,
+  MIDINote,
+  Song,
+  KeyEditor,
+} from 'heartbeat-sequencer';
 import {
   parseMusicXML,
   setGraphicalNoteColor,
@@ -36,11 +42,18 @@ let midiToGraphical: NoteMappingMIDIToGraphical;
 let graphicalToMidi: NoteMappingGraphicalToMIDI;
 let graphicalNotesPerBar: GraphicalNoteData[][];
 let song: Song;
+let keyEditor: KeyEditor;
 let repeats: number[][];
 let initialTempo: number;
 let scoreDivOffsetX: number = 0;
 let scoreDivOffsetY: number = 0;
 let selectedMeasures: number[] = [];
+// for setting the scroll position of the page based on the song position
+let scrollPos = 0;
+let currentY = 0;
+let reference = -1;
+// requestAnimationFrame id for highlighting the active notes
+let raqId: number;
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
@@ -87,6 +100,41 @@ const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
   }
 };
 
+// highlight active notes and dim passive notes
+const highlight = () => {
+  const snapshot = keyEditor.getSnapshot('key-editor');
+  // console.log(snapshot);
+  snapshot.notes.stateChanged.forEach(function(note: MIDINote) {
+    const noteId = note.id;
+    if (note.active) {
+      if (midiToGraphical[noteId]) {
+        const { element, musicSystem } = midiToGraphical[noteId];
+        setGraphicalNoteColor(element, 'red');
+        const tmp = ((musicSystem as unknown) as MusicSystemShim).graphicalMeasures[0][0].stave.y;
+        if (currentY !== tmp) {
+          currentY = tmp;
+          const bbox = element.getBoundingClientRect();
+          if (reference === -1) {
+            reference = bbox.y;
+          } else {
+            scrollPos = bbox.y + window.pageYOffset - reference;
+            window.scroll({
+              top: scrollPos,
+              behavior: 'smooth',
+            });
+          }
+        }
+      }
+    } else if (note.active === false) {
+      if (midiToGraphical[noteId]) {
+        const { element } = midiToGraphical[noteId];
+        setGraphicalNoteColor(element, 'black');
+      }
+    }
+  });
+  raqId = requestAnimationFrame(highlight);
+};
+
 const resize = async () => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
@@ -99,40 +147,8 @@ const resize = async () => {
     repeats,
     song.notes
   ));
-  // setup listener for highlighting the active notes and for the scroll position
-  let scrollPos = 0;
-  let currentY = 0;
-  let reference = -1;
-  song.addEventListener('event', 'type = NOTE_ON', (event: MIDIEvent) => {
-    const noteId = event.midiNote.id;
-    if (midiToGraphical[noteId]) {
-      const { element, musicSystem } = midiToGraphical[noteId];
-      setGraphicalNoteColor(element, 'red');
-      const tmp = ((musicSystem as unknown) as MusicSystemShim).graphicalMeasures[0][0].stave.y;
-      if (currentY !== tmp) {
-        currentY = tmp;
-        const bbox = element.getBoundingClientRect();
-        if (reference === -1) {
-          reference = bbox.y;
-        } else {
-          scrollPos = bbox.y + window.pageYOffset - reference;
-          window.scroll({
-            top: scrollPos,
-            behavior: 'smooth',
-          });
-        }
-      }
-    }
-  });
-  // setup listener to switch of the highlighting if notes are not active anymore
-  song.addEventListener('event', 'type = NOTE_OFF', (event: MIDIEvent) => {
-    const noteId = event.midiNote.id;
-    if (midiToGraphical[noteId]) {
-      const { element } = midiToGraphical[noteId];
-      setGraphicalNoteColor(element, 'black');
-    }
-  });
-  // setup listeners for every graphical note
+
+  // setup listeners for every graphical note to make them clickable
   Object.values(midiToGraphical).forEach(({ element }) => {
     element.addEventListener('mousedown', e => {
       const midiNote = graphicalToMidi[element.id];
@@ -172,6 +188,7 @@ const init = async () => {
   // load MIDI file and setup song
   await loadMIDIFile(midiFile);
   song = sequencer.createSong(sequencer.getMidiFile(midiFileName));
+  keyEditor = sequencer.createKeyEditor(song, {});
   // load instrument and setup all tracks
   let url = instrumentMp3;
   if (sequencer.browser === 'firefox') {
@@ -208,13 +225,16 @@ const init = async () => {
     e.stopImmediatePropagation();
     if (song.playing) {
       song.pause();
+      cancelAnimationFrame(raqId);
     } else {
       song.play();
+      raqId = requestAnimationFrame(highlight);
     }
   });
   btnStop.addEventListener('click', e => {
     e.stopImmediatePropagation();
     song.stop();
+    cancelAnimationFrame(raqId);
     resetScore();
   });
 
