@@ -10,7 +10,7 @@
     "opensheetmusicdisplay": "^0.8.2",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
-    "webdaw-modules": "0.0.11"
+    "webdaw-modules": "0.0.13"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
@@ -25,17 +25,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --fix",
-    "watch": "npm run convert-package-json-dev && npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
-    "watch1": "npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
+    "watch1": "npm run pj-dev && npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
+    "watch": "npm run clean && npm run copy && parcel --port 3000 --no-hmr ./src/index.html",
     "watch2": "parcel --port 3000 --no-hmr ./src/index.html",
     "parcel-build": "parcel build --no-source-maps --public-url ./ --out-dir ./public ./src/index.html",
     "copy": "cp -r ./assets ./dist/assets",
     "clean": "rm -rf .cache/* && rm -rf dist/*",
     "clean2": "rm -rf public",
     "build1": "npm run clean2 && npm run parcel-build",
-    "build": "npm run clean2 && npm run convert-package-json-pub && npm run parcel-build",
-    "convert-package-json-pub": "cd ./util && npm run pub 0.0.23 0.0.11",
-    "convert-package-json-dev": "cd ./util && npm run dev"
+    "build": "npm run clean2 && npm run pj-pub && npm run parcel-build",
+    "pj-pub": "cd ./util && npm run pub 0.0.23 0.0.13",
+    "pj-dev": "cd ./util && npm run dev"
   },
   "repository": {
     "type": "git",

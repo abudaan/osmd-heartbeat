@@ -3,24 +3,32 @@ import sequencer, { loadMusicXMLFile, MIDIEvent, Song } from 'heartbeat-sequence
 import {
   parseMusicXML,
   setGraphicalNoteColor,
-  getGraphicalNotesPerBar,
+  getGraphicalNotesPerMeasure,
   mapMIDINoteIdToGraphicalNote,
   MusicSystemShim,
   getVersion,
   NoteMappingMIDIToGraphical,
-  getGraphicalNotesInSelection,
+  getSelectedMeasures,
   NoteMappingGraphicalToMIDI,
   GraphicalNoteData,
+  BoundingBoxMeasure,
+  getBoundingBoxesOfSelectedMeasures,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
 const ppq = 960;
-// const midiFileName = 'mozk545a';
-// const midiFile = '../assets/mozk545a.mid';
-// const mxmlFile = '../assets/mozk545a_musescore.musicxml';
-const midiFileName = 'spring';
-const midiFile = '../assets/spring.mid';
-const mxmlFile = '../assets/spring.xml';
+const midiFileName = 'mozk545a_musescore';
+const midiFile = '../assets/mozk545a_musescore.mid';
+const mxmlFile = '../assets/mozk545a_musescore.musicxml';
+// const midiFileName = 'spring';
+// const midiFile = '../assets/spring.mid';
+// const mxmlFile = '../assets/spring.xml';
+// const midiFileName = 'mozk545a_2-bars';
+// const midiFile = '../assets/mozk545a_2-bars.mid';
+// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+// const midiFileName = 'mozk545a_4-bars';
+// const midiFile = '../assets/mozk545a_4-bars.mid';
+// const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
 const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
@@ -32,6 +40,7 @@ let repeats: number[][];
 let initialTempo: number;
 let scoreDivOffsetX: number = 0;
 let scoreDivOffsetY: number = 0;
+let selectedMeasures: number[] = [];
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
@@ -58,12 +67,32 @@ const resetScore = () => {
   });
 };
 
+// draw rectangles on the score to indicate the set loop
+const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
+  // selectedBarsDiv.style.display = 'none';
+  while (selectedBarsDiv.firstChild) {
+    selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
+  }
+  if (boundingBoxes.length > 0) {
+    selectedBarsDiv.style.display = 'block';
+    boundingBoxes.forEach(bbox => {
+      const d = document.createElement('div');
+      d.className = 'bar';
+      d.style.left = `${bbox.left + scoreDivOffsetX}px`;
+      d.style.top = `${bbox.top + scoreDivOffsetY}px`;
+      d.style.height = `${bbox.bottom - bbox.top}px`;
+      d.style.width = `${bbox.right - bbox.left}px`;
+      selectedBarsDiv.appendChild(d);
+    });
+  }
+};
+
 const resize = async () => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
   // the score has been rendered so we can get all references to the SVGElement of the notes
-  graphicalNotesPerBar = await getGraphicalNotesPerBar(osmd, ppq);
+  graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
   // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
   ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNote(
     graphicalNotesPerBar,
@@ -111,11 +140,13 @@ const resize = async () => {
       const noteOff = midiNote.noteOff as MIDIEvent;
       if (e.ctrlKey) {
         song.setPlayhead('ticks', noteOn.ticks);
+        if (!song.playing) {
+          song.play();
+        }
         resetScore();
         setGraphicalNoteColor(element, 'red');
       } else {
         setGraphicalNoteColor(element, 'red');
-        console.log(element);
         sequencer.processEvent(
           [
             sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
@@ -131,6 +162,9 @@ const resize = async () => {
       setGraphicalNoteColor(element, 'black');
     });
   });
+  // redraw loop selection
+  const boundingBoxes = getBoundingBoxesOfSelectedMeasures(selectedMeasures, osmd);
+  drawLoop(boundingBoxes);
 };
 
 const init = async () => {
@@ -213,8 +247,8 @@ const init = async () => {
     selectionDiv.style.top = '0px';
     selectionDiv.style.width = '0px';
     selectionDiv.style.height = '0px';
-    const selectedBarRects = getGraphicalNotesInSelection(
-      graphicalNotesPerBar,
+    const { barNumbers, boundingBoxes } = getSelectedMeasures(
+      osmd,
       {
         x: selectionStartPoint.x - scoreDivOffsetX,
         y: selectionStartPoint.y - scoreDivOffsetY,
@@ -224,23 +258,14 @@ const init = async () => {
         y: selectionEndPoint.y - scoreDivOffsetY,
       }
     );
-    // selectedBarsDiv.style.display = 'none';
-    while (selectedBarsDiv.firstChild) {
-      selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
-    }
-    if (selectedBarRects.length > 0) {
-      selectedBarsDiv.style.display = 'block';
-      selectedBarRects.forEach(rect => {
-        const d = document.createElement('div');
-        d.className = 'bar';
-        d.style.left = `${rect.left + scoreDivOffsetX}px`;
-        d.style.top = `${rect.top + scoreDivOffsetY}px`;
-        d.style.height = `${rect.bottom - rect.top}px`;
-        d.style.width = `${rect.right - rect.left}px`;
-        selectedBarsDiv.appendChild(d);
-      });
-      let left = selectedBarRects[0].measureNumber;
-      let right = selectedBarRects[selectedBarRects.length - 1].measureNumber + 1;
+
+    selectedMeasures = barNumbers;
+    // console.log(selectedMeasures, boundingBoxes);
+
+    if (boundingBoxes.length > 0) {
+      drawLoop(boundingBoxes);
+      let left = boundingBoxes[0].measureNumber;
+      let right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
       const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
       const rightPos = song.getPosition('barsbeats', right, 1, 1, 0);
       song.setLeftLocator('ticks', leftPos.ticks);
