@@ -101,7 +101,7 @@ const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
 };
 
 // highlight active notes and dim passive notes
-const highlight = () => {
+const highlight = (time: number, runOnce?: boolean) => {
   const snapshot = keyEditor.getSnapshot('key-editor');
   // console.log(snapshot);
   snapshot.notes.stateChanged.forEach(function(note: MIDINote) {
@@ -132,7 +132,9 @@ const highlight = () => {
       }
     }
   });
-  raqId = requestAnimationFrame(highlight);
+  if (runOnce !== true) {
+    raqId = requestAnimationFrame(highlight);
+  }
 };
 
 const resize = async () => {
@@ -213,22 +215,28 @@ const init = async () => {
   // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
+    cancelAnimationFrame(raqId);
+    resetScore();
+  });
+  song.addEventListener('pause', () => {
+    btnPlay.innerHTML = 'play';
+    cancelAnimationFrame(raqId);
   });
   song.addEventListener('play', () => {
     btnPlay.innerHTML = 'pause';
+    raqId = requestAnimationFrame(highlight);
   });
   song.addEventListener('end', () => {
     btnPlay.innerHTML = 'play';
+    cancelAnimationFrame(raqId);
   });
 
   btnPlay.addEventListener('click', e => {
     e.stopImmediatePropagation();
     if (song.playing) {
       song.pause();
-      cancelAnimationFrame(raqId);
     } else {
       song.play();
-      raqId = requestAnimationFrame(highlight);
     }
   });
   btnStop.addEventListener('click', e => {
@@ -251,7 +259,7 @@ const init = async () => {
   const selectionEndPoint: { x: number; y: number } = { x: -1, y: -1 };
   const drawSelect = (e: MouseEvent) => {
     selectionDiv.style.left = `${selectionStartPoint.x}px`;
-    selectionDiv.style.top = `${selectionStartPoint.y}px`;
+    selectionDiv.style.top = `${selectionStartPoint.y + scrollPos}px`;
     selectionDiv.style.width = `${e.clientX - selectionStartPoint.x}px`;
     selectionDiv.style.height = `${e.clientY - selectionStartPoint.y}px`;
     selectionEndPoint.x = e.clientX;
@@ -271,11 +279,11 @@ const init = async () => {
       osmd,
       {
         x: selectionStartPoint.x - scoreDivOffsetX,
-        y: selectionStartPoint.y - scoreDivOffsetY,
+        y: selectionStartPoint.y - scoreDivOffsetY + scrollPos,
       },
       {
         x: selectionEndPoint.x - scoreDivOffsetX,
-        y: selectionEndPoint.y - scoreDivOffsetY,
+        y: selectionEndPoint.y - scoreDivOffsetY + scrollPos,
       }
     );
 
@@ -311,6 +319,20 @@ const init = async () => {
 
   // song.setTempo(200);
   document.addEventListener('mousedown', startSelect);
+  window.addEventListener('scroll', e => {
+    scrollPos = window.scrollY;
+  });
+  document.addEventListener('keydown', e => {
+    if (e.keyCode === 13) {
+      if (song.playing) {
+        song.pause();
+      } else {
+        song.play();
+      }
+    } else if (e.keyCode === 96) {
+      song.stop();
+    }
+  });
 };
 
 init();

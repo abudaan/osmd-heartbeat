@@ -18762,7 +18762,7 @@ var drawLoop = function drawLoop(boundingBoxes) {
 }; // highlight active notes and dim passive notes
 
 
-var highlight = function highlight() {
+var highlight = function highlight(time, runOnce) {
   var snapshot = keyEditor.getSnapshot('key-editor'); // console.log(snapshot);
 
   snapshot.notes.stateChanged.forEach(function (note) {
@@ -18798,7 +18798,10 @@ var highlight = function highlight() {
       }
     }
   });
-  raqId = requestAnimationFrame(highlight);
+
+  if (runOnce !== true) {
+    raqId = requestAnimationFrame(highlight);
+  }
 };
 
 var resize = function resize() {
@@ -18942,22 +18945,28 @@ var init = function init() {
 
           song.addEventListener('stop', function () {
             btnPlay.innerHTML = 'play';
+            cancelAnimationFrame(raqId);
+            resetScore();
+          });
+          song.addEventListener('pause', function () {
+            btnPlay.innerHTML = 'play';
+            cancelAnimationFrame(raqId);
           });
           song.addEventListener('play', function () {
             btnPlay.innerHTML = 'pause';
+            raqId = requestAnimationFrame(highlight);
           });
           song.addEventListener('end', function () {
             btnPlay.innerHTML = 'play';
+            cancelAnimationFrame(raqId);
           });
           btnPlay.addEventListener('click', function (e) {
             e.stopImmediatePropagation();
 
             if (song.playing) {
               song.pause();
-              cancelAnimationFrame(raqId);
             } else {
               song.play();
-              raqId = requestAnimationFrame(highlight);
             }
           });
           btnStop.addEventListener('click', function (e) {
@@ -19000,7 +19009,7 @@ var init = function init() {
 
           drawSelect = function drawSelect(e) {
             selectionDiv.style.left = selectionStartPoint.x + "px";
-            selectionDiv.style.top = selectionStartPoint.y + "px";
+            selectionDiv.style.top = selectionStartPoint.y + scrollPos + "px";
             selectionDiv.style.width = e.clientX - selectionStartPoint.x + "px";
             selectionDiv.style.height = e.clientY - selectionStartPoint.y + "px";
             selectionEndPoint.x = e.clientX;
@@ -19019,10 +19028,10 @@ var init = function init() {
 
             var _a = webdaw_modules_1.getSelectedMeasures(osmd, {
               x: selectionStartPoint.x - scoreDivOffsetX,
-              y: selectionStartPoint.y - scoreDivOffsetY
+              y: selectionStartPoint.y - scoreDivOffsetY + scrollPos
             }, {
               x: selectionEndPoint.x - scoreDivOffsetX,
-              y: selectionEndPoint.y - scoreDivOffsetY
+              y: selectionEndPoint.y - scoreDivOffsetY + scrollPos
             }),
                 barNumbers = _a.barNumbers,
                 boundingBoxes = _a.boundingBoxes;
@@ -19060,6 +19069,20 @@ var init = function init() {
 
 
           document.addEventListener('mousedown', startSelect);
+          window.addEventListener('scroll', function (e) {
+            scrollPos = window.scrollY;
+          });
+          document.addEventListener('keydown', function (e) {
+            if (e.keyCode === 13) {
+              if (song.playing) {
+                song.pause();
+              } else {
+                song.play();
+              }
+            } else if (e.keyCode === 96) {
+              song.stop();
+            }
+          });
           return [2
           /*return*/
           ];
