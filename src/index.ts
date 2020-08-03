@@ -263,7 +263,6 @@ const init = async () => {
     // console.log(selectedMeasures, boundingBoxes);
 
     if (boundingBoxes.length > 0) {
-      drawLoop(boundingBoxes);
       let left = boundingBoxes[0].measureNumber;
       let right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
       const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
@@ -276,6 +275,7 @@ const init = async () => {
     } else {
       song.setLoop(false);
     }
+    drawLoop(boundingBoxes);
   };
 
   const startSelect = (e: MouseEvent) => {

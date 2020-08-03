@@ -18945,7 +18945,6 @@ var init = function init() {
             selectedMeasures = barNumbers; // console.log(selectedMeasures, boundingBoxes);
 
             if (boundingBoxes.length > 0) {
-              drawLoop(boundingBoxes);
               var left = boundingBoxes[0].measureNumber;
               var right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
               var leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
@@ -18958,6 +18957,8 @@ var init = function init() {
             } else {
               song.setLoop(false);
             }
+
+            drawLoop(boundingBoxes);
           };
 
           startSelect = function startSelect(e) {
