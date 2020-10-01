@@ -6,11 +6,15 @@ import sequencer, {
   Song,
   KeyEditor,
 } from 'heartbeat-sequencer';
+import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
+import { mapMIDINoteIdToGraphicalNotePerTrack } from '../../WebDAW/src/osmd/mapMIDINoteIdToGraphicalNotePerTrack';
 import {
   parseMusicXML,
   setGraphicalNoteColor,
   getGraphicalNotesPerMeasure,
+  // getGraphicalNotesPerMeasurePerTrack,
   mapMIDINoteIdToGraphicalNote,
+  // mapMIDINoteIdToGraphicalNotePerTrack,
   MusicSystemShim,
   getVersion,
   NoteMappingMIDIToGraphical,
@@ -23,15 +27,15 @@ import {
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
 const ppq = 960;
-const midiFileName = 'mozk545a_musescore';
-const midiFile = '../assets/mozk545a_musescore.mid';
-const mxmlFile = '../assets/mozk545a_musescore.musicxml';
+// const midiFileName = 'mozk545a_musescore';
+// const midiFile = '../assets/mozk545a_musescore.mid';
+// const mxmlFile = '../assets/mozk545a_musescore.musicxml';
 // const midiFileName = 'spring';
 // const midiFile = '../assets/spring.mid';
 // const mxmlFile = '../assets/spring.xml';
-// const midiFileName = 'mozk545a_2-bars';
-// const midiFile = '../assets/mozk545a_2-bars.mid';
-// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+const midiFileName = 'mozk545a_2-bars';
+const midiFile = '../assets/mozk545a_2-bars_2-tracks.mid';
+const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
 // const midiFileName = 'mozk545a_4-bars';
 // const midiFile = '../assets/mozk545a_4-bars.mid';
 // const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
@@ -41,6 +45,7 @@ const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
 let midiToGraphical: NoteMappingMIDIToGraphical;
 let graphicalToMidi: NoteMappingGraphicalToMIDI;
 let graphicalNotesPerBar: GraphicalNoteData[][];
+let graphicalNotesPerBarPerMeasure: GraphicalNoteData[][];
 let song: Song;
 let keyEditor: KeyEditor;
 let repeats: number[][];
@@ -139,13 +144,15 @@ const highlight = (time: number, runOnce?: boolean) => {
 
 const resize = async () => {
   osmd.render();
+  // console.log(osmd.GraphicSheet.MeasureList);
+  graphicalNotesPerBarPerMeasure = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
   // the score has been rendered so we can get all references to the SVGElement of the notes
-  graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
+  // graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
   // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
-  ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNote(
-    graphicalNotesPerBar,
+  ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNotePerTrack(
+    graphicalNotesPerBarPerMeasure,
     repeats,
     song.notes
   ));
@@ -199,6 +206,7 @@ const init = async () => {
   const json = await loadJSON(url);
   await addAssetPack(json);
   song.tracks.forEach(track => {
+    // console.log(track.id);
     track.setInstrument(instrumentName);
   });
   // load MusicXML
