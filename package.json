@@ -6,11 +6,11 @@
   "dependencies": {
     "@types/ramda": "^0.26.9",
     "@types/webmidi": "^2.0.3",
-    "heartbeat-sequencer": "file:../heartbeat",
+    "heartbeat-sequencer": "0.0.26",
     "opensheetmusicdisplay": "^0.8.2",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
-    "webdaw-modules": "file:../WebDAW"
+    "webdaw-modules": "0.0.14"
   },
   "devDependencies": {
     "eslint": "^5.16.0",

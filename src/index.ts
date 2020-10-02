@@ -6,15 +6,15 @@ import sequencer, {
   Song,
   KeyEditor,
 } from 'heartbeat-sequencer';
-import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
-import { mapMIDINoteIdToGraphicalNotePerTrack } from '../../WebDAW/src/osmd/mapMIDINoteIdToGraphicalNotePerTrack';
+// import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
+// import { mapMIDINoteIdToGraphicalNotePerTrack } from '../../WebDAW/src/osmd/mapMIDINoteIdToGraphicalNotePerTrack';
 import {
   parseMusicXML,
   setGraphicalNoteColor,
   getGraphicalNotesPerMeasure,
   mapMIDINoteIdToGraphicalNote,
-  // getGraphicalNotesPerMeasurePerTrack,
-  // mapMIDINoteIdToGraphicalNotePerTrack,
+  getGraphicalNotesPerMeasurePerTrack,
+  mapMIDINoteIdToGraphicalNotePerTrack,
   MusicSystemShim,
   getVersion,
   NoteMappingMIDIToGraphical,
