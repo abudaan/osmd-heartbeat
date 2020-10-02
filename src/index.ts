@@ -12,8 +12,8 @@ import {
   parseMusicXML,
   setGraphicalNoteColor,
   getGraphicalNotesPerMeasure,
-  // getGraphicalNotesPerMeasurePerTrack,
   mapMIDINoteIdToGraphicalNote,
+  // getGraphicalNotesPerMeasurePerTrack,
   // mapMIDINoteIdToGraphicalNotePerTrack,
   MusicSystemShim,
   getVersion,
@@ -33,7 +33,10 @@ const ppq = 960;
 // const midiFileName = 'spring';
 // const midiFile = '../assets/spring.mid';
 // const mxmlFile = '../assets/spring.xml';
-const midiFileName = 'mozk545a_2-bars';
+// const midiFileName = 'mozk545a_2-bars';
+// const midiFile = '../assets/mozk545a_2-bars.mid';
+// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+const midiFileName = 'mozk545a_2-bars_2-tracks';
 const midiFile = '../assets/mozk545a_2-bars_2-tracks.mid';
 const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
 // const midiFileName = 'mozk545a_4-bars';
@@ -42,10 +45,10 @@ const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
 const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
-let midiToGraphical: NoteMappingMIDIToGraphical;
-let graphicalToMidi: NoteMappingGraphicalToMIDI;
+let midiToGraphical: NoteMappingMIDIToGraphical = {};
+let graphicalToMidi: NoteMappingGraphicalToMIDI = {};
 let graphicalNotesPerBar: GraphicalNoteData[][];
-let graphicalNotesPerBarPerMeasure: GraphicalNoteData[][];
+let graphicalNotesPerBarPerTrack: GraphicalNoteData[][][];
 let song: Song;
 let keyEditor: KeyEditor;
 let repeats: number[][];
@@ -144,19 +147,39 @@ const highlight = (time: number, runOnce?: boolean) => {
 
 const resize = async () => {
   osmd.render();
-  // console.log(osmd.GraphicSheet.MeasureList);
-  graphicalNotesPerBarPerMeasure = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
+
+  graphicalNotesPerBarPerTrack = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
+  const mappings: {
+    score: number;
+    midiToGraphical: NoteMappingMIDIToGraphical;
+    graphicalToMidi: NoteMappingGraphicalToMIDI;
+  }[] = mapMIDINoteIdToGraphicalNotePerTrack(graphicalNotesPerBarPerTrack, repeats, song.notes);
+
+  mappings.forEach(mapping => {
+    if (mapping.score === 1) {
+      midiToGraphical = {
+        ...midiToGraphical,
+        ...mapping.midiToGraphical,
+      };
+      graphicalToMidi = {
+        ...graphicalToMidi,
+        ...mapping.graphicalToMidi,
+      };
+    }
+  });
+
+  /*
   // the score has been rendered so we can get all references to the SVGElement of the notes
-  // graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
+  graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
   // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
-  ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNotePerTrack(
-    graphicalNotesPerBarPerMeasure,
+  ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNote(
+    graphicalNotesPerBar,
     repeats,
     song.notes
   ));
-
+*/
   // setup listeners for every graphical note to make them clickable
   Object.values(midiToGraphical).forEach(({ element }) => {
     element.addEventListener('mousedown', e => {
