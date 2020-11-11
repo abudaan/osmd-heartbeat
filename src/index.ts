@@ -6,14 +6,14 @@ import sequencer, {
   Song,
   KeyEditor,
 } from 'heartbeat-sequencer';
-// import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
+import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
 // import { mapMIDINoteIdToGraphicalNotePerTrack } from '../../WebDAW/src/osmd/mapMIDINoteIdToGraphicalNotePerTrack';
 import {
   parseMusicXML,
   setGraphicalNoteColor,
   getGraphicalNotesPerMeasure,
   mapMIDINoteIdToGraphicalNote,
-  getGraphicalNotesPerMeasurePerTrack,
+  // getGraphicalNotesPerMeasurePerTrack,
   mapMIDINoteIdToGraphicalNotePerTrack,
   MusicSystemShim,
   getVersion,
@@ -25,26 +25,43 @@ import {
   getBoundingBoxesOfSelectedMeasures,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
+import { setupHighlight } from './highlight';
 
 const ppq = 960;
+
 // const midiFileName = 'mozk545a_musescore';
 // const midiFile = '../assets/mozk545a_musescore.mid';
 // const mxmlFile = '../assets/mozk545a_musescore.musicxml';
+
 // const midiFileName = 'spring';
 // const midiFile = '../assets/spring.mid';
 // const mxmlFile = '../assets/spring.xml';
-// const midiFileName = 'mozk545a_2-bars';
-// const midiFile = '../assets/mozk545a_2-bars.mid';
-// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+
+const midiFileName = 'mozk545a_2-bars';
+const midiFile = '../assets/mozk545a_2-bars.mid';
+const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
 // const midiFileName = 'mozk545a_2-bars_2-tracks';
 // const midiFile = '../assets/mozk545a_2-bars_2-tracks.mid';
 // const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
 // const midiFileName = '3b中華色彩s-花非花 (full score)';
 // const midiFile = '../assets/3b中華色彩s-花非花 (full score).mid';
 // const mxmlFile = '../assets/3b中華色彩s-花非花 (vocal score).musicxml';
-const midiFileName = 'full-score';
-const midiFile = '../assets/full-score.mid';
-const mxmlFile = '../assets/vocal-score.musicxml';
+// const midiFileName = 'full-score';
+// const midiFile = '../assets/full-score.mid';
+// const mxmlFile = '../assets/vocal-score.musicxml';
+
+// const midiFileName = '4a2s-瀰度山歌 (full score)';
+// const midiFile = '../assets/4a2s-瀰度山歌 (full score).mid';
+// const mxmlFile = '../assets/4a2s-瀰度山歌 (vocal score).xml';
+
+// const midiFileName = '知己v1';
+// const midiFile = '../assets/知己v1.mid';
+// const mxmlFile = '../assets/知己v1.xml';
+
+// const midiFileName = 'Canon_in_D__Pachelbel__Guitar_Tab';
+// const midiFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.mid';
+// const mxmlFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.musicxml';
+
 // const midiFileName = 'mozk545a_4-bars';
 // const midiFile = '../assets/mozk545a_4-bars.mid';
 // const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
@@ -114,47 +131,19 @@ const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
   }
 };
 
-// highlight active notes and dim passive notes
-const highlight = (time: number, runOnce?: boolean) => {
-  const snapshot = keyEditor.getSnapshot('key-editor');
-  // console.log(snapshot);
-  snapshot.notes.stateChanged.forEach(function(note: MIDINote) {
-    const noteId = note.id;
-    if (note.active) {
-      if (midiToGraphical[noteId]) {
-        const { element, musicSystem } = midiToGraphical[noteId];
-        setGraphicalNoteColor(element, 'red');
-        const tmp = ((musicSystem as unknown) as MusicSystemShim).graphicalMeasures[0][0].stave.y;
-        if (currentY !== tmp) {
-          currentY = tmp;
-          const bbox = element.getBoundingClientRect();
-          if (reference === -1) {
-            reference = bbox.y;
-          } else {
-            scrollPos = bbox.y + window.pageYOffset - reference;
-            window.scroll({
-              top: scrollPos,
-              behavior: 'smooth',
-            });
-          }
-        }
-      }
-    } else if (note.active === false) {
-      if (midiToGraphical[noteId]) {
-        const { element } = midiToGraphical[noteId];
-        setGraphicalNoteColor(element, 'black');
-      }
-    }
-  });
-  if (runOnce !== true) {
-    raqId = requestAnimationFrame(highlight);
-  }
-};
-
 const resize = async () => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
+
+  const textElements = document.getElementsByTagName('text');
+  for (let i = 0; i < textElements.length; i++) {
+    const el = textElements[i];
+    if (el.innerHTML === 'f') {
+      el.setAttribute('font-weight', 'normal');
+      el.setAttribute('font-style', 'normal');
+    }
+  }
 
   graphicalNotesPerBarPerTrack = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
   const mappings: {
@@ -186,6 +175,7 @@ const resize = async () => {
     song.notes
   ));
 */
+  console.log(midiToGraphical);
   // setup listeners for every graphical note to make them clickable
   Object.values(midiToGraphical).forEach(({ element }) => {
     element.addEventListener('mousedown', e => {
@@ -240,32 +230,37 @@ const init = async () => {
   });
   // load MusicXML
   const xmlDoc = await loadMusicXMLFile(mxmlFile);
-  await osmd.load(xmlDoc);
+  osmd.load(xmlDoc);
   // parse the MusicXML file to find where the song repeats
   const parsed = parseMusicXML(xmlDoc, ppq);
   if (parsed === null) {
     return;
   }
   ({ repeats, initialTempo } = parsed);
+  // console.log(parsed);
+
   // the score gets rendered every time the window resizes; here we force the first render
   await resize();
+
+  const { start: startHighlight, stop: stopHighlight } = setupHighlight(keyEditor, midiToGraphical);
+
   // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
-    cancelAnimationFrame(raqId);
+    stopHighlight();
     resetScore();
   });
   song.addEventListener('pause', () => {
     btnPlay.innerHTML = 'play';
-    cancelAnimationFrame(raqId);
+    stopHighlight();
   });
   song.addEventListener('play', () => {
     btnPlay.innerHTML = 'pause';
-    raqId = requestAnimationFrame(highlight);
+    startHighlight();
   });
   song.addEventListener('end', () => {
     btnPlay.innerHTML = 'play';
-    cancelAnimationFrame(raqId);
+    stopHighlight();
   });
 
   btnPlay.addEventListener('click', e => {
