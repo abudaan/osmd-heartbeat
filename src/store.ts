@@ -14,6 +14,9 @@ export type State = {
     file: Heartbeat.Song;
   }[];
   currentMIDIFile: string;
+  instrumentName: string;
+  scoreDivOffsetX: number;
+  scoreDivOffsetY: number;
 };
 
 export type Reducers = {
@@ -21,8 +24,8 @@ export type Reducers = {
   getField: () => number;
   setField2: (val: number) => void;
   loadSomething: (url: string) => Promise<void>;
-  hydrate: (state: State) => void;
-  dehydrate: () => State;
+  // hydrate: (state: State) => void;
+  // dehydrate: () => State;
 };
 
 export type Store = State & Reducers;
@@ -31,8 +34,11 @@ export const store = create<Store>((set, get) => ({
   ppq: 960,
   mxmlFiles: [],
   midiFiles: [],
-  currentMIDIFile: '',
+  currentMIDIFile: '../assets/mozk545a_2-bars.mid',
   currentMXMLFile: '../assets/mozk545a_2-bars.musicxml',
+  instrumentName: 'TP00-PianoStereo',
+  scoreDivOffsetX: 0,
+  scoreDivOffsetY: 0,
   field: 0,
   something: null,
   setField: (val: number) => {
@@ -54,18 +60,18 @@ export const store = create<Store>((set, get) => ({
     const data = await fetch(url).then(response => response.json());
     set({ something: data });
   },
-  hydrate: (state: State) => {
-    set({ ...state });
-  },
-  dehydrate: () => {
-    return {
-      ppq: get().ppq,
-      field: get().field,
-      something: get().something,
-      mxmlFiles: get().mxmlFiles,
-      midiFiles: get().midiFiles,
-      currentMXMLFile: get().currentMXMLFile,
-      currentMIDIFile: get().currentMIDIFile,
-    };
-  },
+  // hydrate: (state: State) => {
+  //   set({ ...state });
+  // },
+  // dehydrate: () => {
+  //   return {
+  //     ppq: get().ppq,
+  //     field: get().field,
+  //     something: get().something,
+  //     mxmlFiles: get().mxmlFiles,
+  //     midiFiles: get().midiFiles,
+  //     currentMXMLFile: get().currentMXMLFile,
+  //     currentMIDIFile: get().currentMIDIFile,
+  //   };
+  // },
 }));

@@ -97,40 +97,7 @@ const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
   }
 };
 
-const resize = async (song: Heartbeat.Song) => {
-  osmd.render();
-  scoreDivOffsetX = scoreDiv.offsetLeft;
-  scoreDivOffsetY = scoreDiv.offsetTop;
-
-  const textElements = document.getElementsByTagName('text');
-  for (let i = 0; i < textElements.length; i++) {
-    const el = textElements[i];
-    if (el.innerHTML === 'f') {
-      el.setAttribute('font-weight', 'normal');
-      el.setAttribute('font-style', 'normal');
-    }
-  }
-
-  graphicalNotesPerBarPerTrack = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
-  console.log(graphicalNotesPerBarPerTrack);
-  const mappings: {
-    // score: number;
-    midiToGraphical: NoteMappingMIDIToGraphical;
-    graphicalToMidi: NoteMappingGraphicalToMIDI;
-  }[] = mapMIDINoteIdToGraphicalNotePerTrack(graphicalNotesPerBarPerTrack, repeats, song.notes);
-  // console.log(mappings);
-
-  mappings.forEach(mapping => {
-    midiToGraphical = {
-      ...midiToGraphical,
-      ...mapping.midiToGraphical,
-    };
-    graphicalToMidi = {
-      ...graphicalToMidi,
-      ...mapping.graphicalToMidi,
-    };
-  });
-
+const resize2 = async (song: Heartbeat.Song) => {
   /*
   // the score has been rendered so we can get all references to the SVGElement of the notes
   graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
@@ -204,9 +171,9 @@ const setupWatcher = (
 const init = async () => {
   await setupSequencer();
   const { song, keyEditor } = await setupSong();
-  const { repeats, initialTempo } = await setupScore();
+  console.log(song);
+  await setupScore(document.body);
   // the score gets rendered every time the window resizes; here we force the first render
-  await resize(song);
 
   const { start: startWatch, stop: stopWatch } = setupWatcher(keyEditor, midiToGraphical);
 
@@ -249,9 +216,9 @@ const init = async () => {
   btnStop.disabled = false;
   loadingDiv.style.display = 'none';
 
-  window.addEventListener('resize', async () => {
-    await resize(song);
-  });
+  // window.addEventListener('resize', async () => {
+  //   await resize(song);
+  // });
 
   const selectionStartPoint: { x: number; y: number } = { x: -1, y: -1 };
   const selectionEndPoint: { x: number; y: number } = { x: -1, y: -1 };
