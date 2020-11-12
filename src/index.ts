@@ -6,14 +6,14 @@ import sequencer, {
   Song,
   KeyEditor,
 } from 'heartbeat-sequencer';
-import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
+// import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
 // import { mapMIDINoteIdToGraphicalNotePerTrack } from '../../WebDAW/src/osmd/mapMIDINoteIdToGraphicalNotePerTrack';
 import {
   parseMusicXML,
   setGraphicalNoteColor,
   getGraphicalNotesPerMeasure,
   mapMIDINoteIdToGraphicalNote,
-  // getGraphicalNotesPerMeasurePerTrack,
+  getGraphicalNotesPerMeasurePerTrack,
   mapMIDINoteIdToGraphicalNotePerTrack,
   MusicSystemShim,
   getVersion,
@@ -24,47 +24,17 @@ import {
   BoundingBoxMeasure,
   getBoundingBoxesOfSelectedMeasures,
 } from 'webdaw-modules';
-import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
-import { setupHighlight } from './highlight';
+import { setScroll } from './setScroll';
+import { setHighlight } from './setHighlight';
+import { setupSequencer } from './setupSequencer';
+import { setupSong } from './setupSong';
 
 const ppq = 960;
-
-// const midiFileName = 'mozk545a_musescore';
-// const midiFile = '../assets/mozk545a_musescore.mid';
-// const mxmlFile = '../assets/mozk545a_musescore.musicxml';
-
-// const midiFileName = 'spring';
-// const midiFile = '../assets/spring.mid';
-// const mxmlFile = '../assets/spring.xml';
 
 const midiFileName = 'mozk545a_2-bars';
 const midiFile = '../assets/mozk545a_2-bars.mid';
 const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
-// const midiFileName = 'mozk545a_2-bars_2-tracks';
-// const midiFile = '../assets/mozk545a_2-bars_2-tracks.mid';
-// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
-// const midiFileName = '3b中華色彩s-花非花 (full score)';
-// const midiFile = '../assets/3b中華色彩s-花非花 (full score).mid';
-// const mxmlFile = '../assets/3b中華色彩s-花非花 (vocal score).musicxml';
-// const midiFileName = 'full-score';
-// const midiFile = '../assets/full-score.mid';
-// const mxmlFile = '../assets/vocal-score.musicxml';
 
-// const midiFileName = '4a2s-瀰度山歌 (full score)';
-// const midiFile = '../assets/4a2s-瀰度山歌 (full score).mid';
-// const mxmlFile = '../assets/4a2s-瀰度山歌 (vocal score).xml';
-
-// const midiFileName = '知己v1';
-// const midiFile = '../assets/知己v1.mid';
-// const mxmlFile = '../assets/知己v1.xml';
-
-// const midiFileName = 'Canon_in_D__Pachelbel__Guitar_Tab';
-// const midiFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.mid';
-// const mxmlFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.musicxml';
-
-// const midiFileName = 'mozk545a_4-bars';
-// const midiFile = '../assets/mozk545a_4-bars.mid';
-// const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
 const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
@@ -72,8 +42,6 @@ let midiToGraphical: NoteMappingMIDIToGraphical = {};
 let graphicalToMidi: NoteMappingGraphicalToMIDI = {};
 let graphicalNotesPerBar: GraphicalNoteData[][];
 let graphicalNotesPerBarPerTrack: GraphicalNoteData[][][];
-let song: Song;
-let keyEditor: KeyEditor;
 let repeats: number[][];
 let initialTempo: number;
 let scoreDivOffsetX: number = 0;
@@ -84,7 +52,6 @@ let scrollPos = 0;
 let currentY = 0;
 let reference = -1;
 // requestAnimationFrame id for highlighting the active notes
-let raqId: number;
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
@@ -131,7 +98,7 @@ const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
   }
 };
 
-const resize = async () => {
+const resize = async (song: Heartbeat.Song) => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
@@ -146,23 +113,23 @@ const resize = async () => {
   }
 
   graphicalNotesPerBarPerTrack = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
+  console.log(graphicalNotesPerBarPerTrack);
   const mappings: {
-    score: number;
+    // score: number;
     midiToGraphical: NoteMappingMIDIToGraphical;
     graphicalToMidi: NoteMappingGraphicalToMIDI;
   }[] = mapMIDINoteIdToGraphicalNotePerTrack(graphicalNotesPerBarPerTrack, repeats, song.notes);
+  // console.log(mappings);
 
   mappings.forEach(mapping => {
-    if (mapping.score === 1) {
-      midiToGraphical = {
-        ...midiToGraphical,
-        ...mapping.midiToGraphical,
-      };
-      graphicalToMidi = {
-        ...graphicalToMidi,
-        ...mapping.graphicalToMidi,
-      };
-    }
+    midiToGraphical = {
+      ...midiToGraphical,
+      ...mapping.midiToGraphical,
+    };
+    graphicalToMidi = {
+      ...graphicalToMidi,
+      ...mapping.graphicalToMidi,
+    };
   });
 
   /*
@@ -175,7 +142,6 @@ const resize = async () => {
     song.notes
   ));
 */
-  console.log(midiToGraphical);
   // setup listeners for every graphical note to make them clickable
   Object.values(midiToGraphical).forEach(({ element }) => {
     element.addEventListener('mousedown', e => {
@@ -211,23 +177,35 @@ const resize = async () => {
   drawLoop(boundingBoxes);
 };
 
+const setupWatcher = (
+  keyEditor: Heartbeat.KeyEditor,
+  midiToGraphical: NoteMappingMIDIToGraphical
+) => {
+  let raqId: number;
+  const render = () => {
+    const snapshot = keyEditor.getSnapshot('key-editor');
+    setHighlight(snapshot, midiToGraphical);
+    setScroll(snapshot, midiToGraphical);
+  };
+  const loop = () => {
+    render();
+    raqId = requestAnimationFrame(loop);
+  };
+  return {
+    start: () => {
+      raqId = requestAnimationFrame(loop);
+    },
+    stop: () => {
+      cancelAnimationFrame(raqId);
+    },
+    runOnce: render,
+  };
+};
+
 const init = async () => {
-  await sequencer.ready();
-  // load MIDI file and setup song
-  await loadMIDIFile(midiFile);
-  song = sequencer.createSong(sequencer.getMidiFile(midiFileName));
-  keyEditor = sequencer.createKeyEditor(song, {});
-  // load instrument and setup all tracks
-  let url = instrumentMp3;
-  if (sequencer.browser === 'firefox') {
-    url = instrumentOgg;
-  }
-  const json = await loadJSON(url);
-  await addAssetPack(json);
-  song.tracks.forEach(track => {
-    // console.log(track.id);
-    track.setInstrument(instrumentName);
-  });
+  await setupSequencer();
+  const { song, keyEditor } = await setupSong();
+
   // load MusicXML
   const xmlDoc = await loadMusicXMLFile(mxmlFile);
   osmd.load(xmlDoc);
@@ -240,27 +218,27 @@ const init = async () => {
   // console.log(parsed);
 
   // the score gets rendered every time the window resizes; here we force the first render
-  await resize();
+  await resize(song);
 
-  const { start: startHighlight, stop: stopHighlight } = setupHighlight(keyEditor, midiToGraphical);
+  const { start: startWatch, stop: stopWatch } = setupWatcher(keyEditor, midiToGraphical);
 
   // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
-    stopHighlight();
+    stopWatch();
     resetScore();
   });
   song.addEventListener('pause', () => {
     btnPlay.innerHTML = 'play';
-    stopHighlight();
+    stopWatch();
   });
   song.addEventListener('play', () => {
     btnPlay.innerHTML = 'pause';
-    startHighlight();
+    startWatch();
   });
   song.addEventListener('end', () => {
     btnPlay.innerHTML = 'play';
-    stopHighlight();
+    stopWatch();
   });
 
   btnPlay.addEventListener('click', e => {
@@ -274,7 +252,7 @@ const init = async () => {
   btnStop.addEventListener('click', e => {
     e.stopImmediatePropagation();
     song.stop();
-    cancelAnimationFrame(raqId);
+    stopWatch();
     resetScore();
   });
 
@@ -284,7 +262,7 @@ const init = async () => {
   loadingDiv.style.display = 'none';
 
   window.addEventListener('resize', async () => {
-    await resize();
+    await resize(song);
   });
 
   const selectionStartPoint: { x: number; y: number } = { x: -1, y: -1 };

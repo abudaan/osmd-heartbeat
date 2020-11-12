@@ -10,7 +10,8 @@
     "opensheetmusicdisplay": "^0.8.6",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
-    "webdaw-modules": "0.0.15"
+    "webdaw-modules": "0.0.15",
+    "zustand": "^3.1.4"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
