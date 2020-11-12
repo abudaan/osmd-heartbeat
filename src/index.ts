@@ -28,6 +28,7 @@ import { setScroll } from './setScroll';
 import { setHighlight } from './setHighlight';
 import { setupSequencer } from './setupSequencer';
 import { setupSong } from './setupSong';
+import { setupScore } from './setupScore';
 
 const ppq = 960;
 
@@ -42,8 +43,6 @@ let midiToGraphical: NoteMappingMIDIToGraphical = {};
 let graphicalToMidi: NoteMappingGraphicalToMIDI = {};
 let graphicalNotesPerBar: GraphicalNoteData[][];
 let graphicalNotesPerBarPerTrack: GraphicalNoteData[][][];
-let repeats: number[][];
-let initialTempo: number;
 let scoreDivOffsetX: number = 0;
 let scoreDivOffsetY: number = 0;
 let selectedMeasures: number[] = [];
@@ -205,18 +204,7 @@ const setupWatcher = (
 const init = async () => {
   await setupSequencer();
   const { song, keyEditor } = await setupSong();
-
-  // load MusicXML
-  const xmlDoc = await loadMusicXMLFile(mxmlFile);
-  osmd.load(xmlDoc);
-  // parse the MusicXML file to find where the song repeats
-  const parsed = parseMusicXML(xmlDoc, ppq);
-  if (parsed === null) {
-    return;
-  }
-  ({ repeats, initialTempo } = parsed);
-  // console.log(parsed);
-
+  const { repeats, initialTempo } = await setupScore();
   // the score gets rendered every time the window resizes; here we force the first render
   await resize(song);
 
