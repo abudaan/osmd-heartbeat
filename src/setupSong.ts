@@ -13,7 +13,6 @@ const load = async (midiFile: string, instrumentName: string) => {
     // console.log(track.id);
     track.setInstrument(instrumentName);
   });
-
   return {
     song,
     keyEditor,
@@ -34,6 +33,11 @@ export const setupSong = async (): Promise<{
     },
     state => [state.currentMIDIFile, state.instrumentName]
   );
-  const { currentMIDIFile, instrumentName } = store.getState();
-  return await load(currentMIDIFile, instrumentName);
+  const { currentMIDIFile, instrumentName, storeSong } = store.getState();
+  const { song, keyEditor } = await load(currentMIDIFile, instrumentName);
+  storeSong(song, keyEditor);
+  return {
+    song,
+    keyEditor,
+  };
 };

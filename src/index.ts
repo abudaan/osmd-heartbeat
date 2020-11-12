@@ -172,7 +172,7 @@ const init = async () => {
   await setupSequencer();
   const { song, keyEditor } = await setupSong();
   console.log(song);
-  await setupScore(document.body);
+  await setupScore(scoreDiv);
   // the score gets rendered every time the window resizes; here we force the first render
 
   const { start: startWatch, stop: stopWatch } = setupWatcher(keyEditor, midiToGraphical);

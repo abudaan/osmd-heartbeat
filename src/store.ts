@@ -1,3 +1,4 @@
+import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay/build/dist/src';
 import create from 'zustand/vanilla';
 
 export type State = {
@@ -17,9 +18,16 @@ export type State = {
   instrumentName: string;
   scoreDivOffsetX: number;
   scoreDivOffsetY: number;
+  nonSerializable: {
+    osmd?: OpenSheetMusicDisplay;
+    song?: Heartbeat.Song;
+    keyEditor?: Heartbeat.KeyEditor;
+  };
 };
 
 export type Reducers = {
+  storeOSMD: (osmd: OpenSheetMusicDisplay) => void;
+  storeSong: (song: Heartbeat.Song, keyEditor: Heartbeat.KeyEditor) => void;
   setField: (val: number) => void;
   getField: () => number;
   setField2: (val: number) => void;
@@ -41,6 +49,24 @@ export const store = create<Store>((set, get) => ({
   scoreDivOffsetY: 0,
   field: 0,
   something: null,
+  nonSerializable: {},
+  storeOSMD: (osmd: OpenSheetMusicDisplay) => {
+    set(state => ({
+      nonSerializable: {
+        ...state.nonSerializable,
+        osmd,
+      },
+    }));
+  },
+  storeSong: (song: Heartbeat.Song, keyEditor: Heartbeat.KeyEditor) => {
+    set(state => ({
+      nonSerializable: {
+        ...state.nonSerializable,
+        song,
+        keyEditor,
+      },
+    }));
+  },
   setField: (val: number) => {
     set({ field: val });
   },
