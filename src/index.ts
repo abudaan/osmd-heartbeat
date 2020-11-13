@@ -52,22 +52,13 @@ let currentY = 0;
 let reference = -1;
 // requestAnimationFrame id for highlighting the active notes
 
-const btnPlay = document.getElementById('play') as HTMLButtonElement;
-const btnStop = document.getElementById('stop') as HTMLButtonElement;
-const scoreDiv = document.getElementById('score');
+const scoreDiv = document.getElementById('score') as HTMLDivElement;
 const loadingDiv = document.getElementById('loading');
-const selectionDiv = document.getElementById('selection');
+const selectionDiv = document.getElementById('selection') as HTMLDivElement;
 const selectedBarsDiv = document.getElementById('selected-bars');
 if (scoreDiv === null || selectionDiv === null || loadingDiv === null || selectedBarsDiv === null) {
   throw new Error('element not found');
 }
-
-const osmd = new OpenSheetMusicDisplay(scoreDiv, {
-  backend: 'svg',
-  autoResize: false,
-});
-console.log(`OSMD: ${osmd.Version}`);
-console.log(`WebDAW: ${getVersion()}`);
 
 // reset all highlighted notes
 const resetScore = () => {
@@ -171,49 +162,9 @@ const setupWatcher = (
 const init = async () => {
   await setupSequencer();
   const { song, keyEditor } = await setupSong();
-  console.log(song);
   await setupScore(scoreDiv);
-  // the score gets rendered every time the window resizes; here we force the first render
-
   const { start: startWatch, stop: stopWatch } = setupWatcher(keyEditor, midiToGraphical);
 
-  // setup controls
-  song.addEventListener('stop', () => {
-    btnPlay.innerHTML = 'play';
-    stopWatch();
-    resetScore();
-  });
-  song.addEventListener('pause', () => {
-    btnPlay.innerHTML = 'play';
-    stopWatch();
-  });
-  song.addEventListener('play', () => {
-    btnPlay.innerHTML = 'pause';
-    startWatch();
-  });
-  song.addEventListener('end', () => {
-    btnPlay.innerHTML = 'play';
-    stopWatch();
-  });
-
-  btnPlay.addEventListener('click', e => {
-    e.stopImmediatePropagation();
-    if (song.playing) {
-      song.pause();
-    } else {
-      song.play();
-    }
-  });
-  btnStop.addEventListener('click', e => {
-    e.stopImmediatePropagation();
-    song.stop();
-    stopWatch();
-    resetScore();
-  });
-
-  // everything has been setup so we can enable the buttons
-  btnPlay.disabled = false;
-  btnStop.disabled = false;
   loadingDiv.style.display = 'none';
 
   // window.addEventListener('resize', async () => {

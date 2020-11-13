@@ -1,4 +1,5 @@
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay/build/dist/src';
+import { ParsedMusicXML } from 'webdaw-modules';
 import create from 'zustand/vanilla';
 
 export type State = {
@@ -23,6 +24,7 @@ export type State = {
     song?: Heartbeat.Song;
     keyEditor?: Heartbeat.KeyEditor;
   };
+  parsedMusicXMLData: ParsedMusicXML;
 };
 
 export type Reducers = {
@@ -50,6 +52,7 @@ export const store = create<Store>((set, get) => ({
   field: 0,
   something: null,
   nonSerializable: {},
+  parsedMusicXMLData: null,
   storeOSMD: (osmd: OpenSheetMusicDisplay) => {
     set(state => ({
       nonSerializable: {

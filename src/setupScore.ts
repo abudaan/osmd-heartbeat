@@ -19,11 +19,12 @@ const loadScore = async (
     return Promise.reject();
   }
   // const { repeats, initialTempo } = parsed;
+  store.setState({ parsedMusicXMLData: parsed });
   return parsed;
 };
 
 export const setupScore = async (
-  scoreDiv: HTMLElement
+  scoreDiv: HTMLDivElement
 ): Promise<{ osmd: OpenSheetMusicDisplay }> => {
   const { ppq, currentMXMLFile, storeOSMD } = store.getState();
 
@@ -44,11 +45,6 @@ export const setupScore = async (
 
   if (currentMXMLFile) {
     const data = await loadScore(osmd, currentMXMLFile, ppq);
-    let repeats: number[][] = [];
-    if (data !== null) {
-      ({ repeats } = data);
-    }
-
     resizeScore({ div: scoreDiv, osmd });
   }
 
