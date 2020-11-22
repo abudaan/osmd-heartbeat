@@ -13,6 +13,7 @@ import {
   getVersion,
   NoteMappingMIDIToGraphical,
   getSelectedMeasures,
+  getBoundingBoxesOfSelectedMeasures,
   NoteMappingGraphicalToMIDI,
   GraphicalNoteData,
   BoundingBoxMeasure,
@@ -26,9 +27,12 @@ const ppq = 960;
 // const midiFileName = 'spring';
 // const midiFile = '../assets/spring.mid';
 // const mxmlFile = '../assets/spring.xml';
-const midiFileName = 'mozk545a_2-bars';
-const midiFile = '../assets/mozk545a_2-bars.mid';
-const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+// const midiFileName = 'mozk545a_2-bars';
+// const midiFile = '../assets/mozk545a_2-bars.mid';
+// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
+const midiFileName = 'Canon_in_D__Pachelbel__Guitar_Tab';
+const midiFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.mid';
+const mxmlFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.musicxml';
 // const midiFileName = 'mozk545a_2-bars_2-tracks';
 // const midiFile = '../assets/mozk545a_2-bars_2-tracks.mid';
 // const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
@@ -103,6 +107,10 @@ const resize = async () => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
+  // redraw loop selection
+  const boundingBoxes = getBoundingBoxesOfSelectedMeasures(selectedMeasures, osmd);
+  drawLoop(boundingBoxes);
+
   // osmd.GraphicSheet.MeasureList.forEach((measure, measureNumber) => {
   //   console.log(measure, measureNumber);
   // });
@@ -153,7 +161,7 @@ const init = async () => {
   // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
-    // cancelAnimationFrame(raqId);
+    cancelAnimationFrame(raqId);
   });
 
   song.addEventListener('pause', () => {
@@ -172,8 +180,8 @@ const init = async () => {
   });
 
   song.addEventListener('position', 'bar', () => {
-    const s = keyEditor.getSnapshot('keyeditor');
-    const n = s.notes.active[0];
+    // const s = keyEditor.getSnapshot('keyeditor');
+    // const n = s.notes.active[0];
     const measures = osmd.GraphicSheet.MeasureList.find(e => e[0]['measureNumber'] === song.bar);
     if (measures) {
       const yPos: number[] = [];
