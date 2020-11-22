@@ -6,15 +6,9 @@ import sequencer, {
   Song,
   KeyEditor,
 } from 'heartbeat-sequencer';
-// import { getGraphicalNotesPerMeasurePerTrack } from '../../WebDAW/src/osmd/getGraphicalNotesPerMeasurePerTrack';
-// import { mapMIDINoteIdToGraphicalNotePerTrack } from '../../WebDAW/src/osmd/mapMIDINoteIdToGraphicalNotePerTrack';
 import {
   parseMusicXML,
   setGraphicalNoteColor,
-  getGraphicalNotesPerMeasure,
-  mapMIDINoteIdToGraphicalNote,
-  getGraphicalNotesPerMeasurePerTrack,
-  mapMIDINoteIdToGraphicalNotePerTrack,
   MusicSystemShim,
   getVersion,
   NoteMappingMIDIToGraphical,
@@ -22,7 +16,6 @@ import {
   NoteMappingGraphicalToMIDI,
   GraphicalNoteData,
   BoundingBoxMeasure,
-  getBoundingBoxesOfSelectedMeasures,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
@@ -51,16 +44,15 @@ const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
 const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
-let midiToGraphical: NoteMappingMIDIToGraphical = {};
-let graphicalToMidi: NoteMappingGraphicalToMIDI = {};
-let graphicalNotesPerBar: GraphicalNoteData[][];
-let graphicalNotesPerBarPerTrack: GraphicalNoteData[][][];
 let song: Song;
 let keyEditor: KeyEditor;
 let repeats: number[][];
 let initialTempo: number;
 let scoreDivOffsetX: number = 0;
 let scoreDivOffsetY: number = 0;
+let currentBarStartX: number = 0;
+let currentBarStartMillis: number = 0;
+let pixelsPerMilli: number = 0;
 let selectedMeasures: number[] = [];
 // for setting the scroll position of the page based on the song position
 let scrollPos = 0;
@@ -71,6 +63,7 @@ let raqId: number;
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
+const divPlayhead = document.getElementById('playhead') as HTMLDivElement;
 const scoreDiv = document.getElementById('score');
 const loadingDiv = document.getElementById('loading');
 const selectionDiv = document.getElementById('selection');
@@ -85,14 +78,6 @@ const osmd = new OpenSheetMusicDisplay(scoreDiv, {
 });
 console.log(`OSMD: ${osmd.Version}`);
 console.log(`WebDAW: ${getVersion()}`);
-
-// reset all highlighted notes
-const resetScore = () => {
-  Object.values(midiToGraphical).forEach(g => {
-    const { element } = g;
-    setGraphicalNoteColor(element, 'black');
-  });
-};
 
 // draw rectangles on the score to indicate the set loop
 const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
@@ -114,111 +99,27 @@ const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
   }
 };
 
-// highlight active notes and dim passive notes
-const highlight = (time: number, runOnce?: boolean) => {
-  const snapshot = keyEditor.getSnapshot('key-editor');
-  // console.log(snapshot);
-  snapshot.notes.stateChanged.forEach(function(note: MIDINote) {
-    const noteId = note.id;
-    if (note.active) {
-      if (midiToGraphical[noteId]) {
-        const { element, musicSystem } = midiToGraphical[noteId];
-        setGraphicalNoteColor(element, 'red');
-        const tmp = ((musicSystem as unknown) as MusicSystemShim).graphicalMeasures[0][0].stave.y;
-        if (currentY !== tmp) {
-          currentY = tmp;
-          const bbox = element.getBoundingClientRect();
-          if (reference === -1) {
-            reference = bbox.y;
-          } else {
-            scrollPos = bbox.y + window.pageYOffset - reference;
-            window.scroll({
-              top: scrollPos,
-              behavior: 'smooth',
-            });
-          }
-        }
-      }
-    } else if (note.active === false) {
-      if (midiToGraphical[noteId]) {
-        const { element } = midiToGraphical[noteId];
-        setGraphicalNoteColor(element, 'black');
-      }
-    }
-  });
-  if (runOnce !== true) {
-    raqId = requestAnimationFrame(highlight);
-  }
-};
-
 const resize = async () => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
+  // osmd.GraphicSheet.MeasureList.forEach((measure, measureNumber) => {
+  //   console.log(measure, measureNumber);
+  // });
+};
 
-  graphicalNotesPerBarPerTrack = getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
-  const mappings: {
-    score: number;
-    midiToGraphical: NoteMappingMIDIToGraphical;
-    graphicalToMidi: NoteMappingGraphicalToMIDI;
-  }[] = mapMIDINoteIdToGraphicalNotePerTrack(graphicalNotesPerBarPerTrack, repeats, song.notes);
+const setPlayhead = (args: { x: number; y: number; width: number; height: number }) => {
+  const { x, y, width, height } = args;
+  divPlayhead.style.top = `${y}px`;
+  divPlayhead.style.left = `${x}px`;
+  divPlayhead.style.width = `${width}px`;
+  divPlayhead.style.height = `${height}px`;
+};
 
-  mappings.forEach(mapping => {
-    if (mapping.score > 0.5) {
-      midiToGraphical = {
-        ...midiToGraphical,
-        ...mapping.midiToGraphical,
-      };
-      graphicalToMidi = {
-        ...graphicalToMidi,
-        ...mapping.graphicalToMidi,
-      };
-    }
-  });
-
-  /*
-  // the score has been rendered so we can get all references to the SVGElement of the notes
-  graphicalNotesPerBar = await getGraphicalNotesPerMeasure(osmd, ppq);
-  // map the MIDI notes (MIDINote) to the graphical notes (SVGElement)
-  ({ midiToGraphical, graphicalToMidi } = mapMIDINoteIdToGraphicalNote(
-    graphicalNotesPerBar,
-    repeats,
-    song.notes
-  ));
-*/
-  // setup listeners for every graphical note to make them clickable
-  Object.values(midiToGraphical).forEach(({ element }) => {
-    element.addEventListener('mousedown', e => {
-      const midiNote = graphicalToMidi[element.id];
-      const noteOn = midiNote.noteOn as MIDIEvent;
-      const noteOff = midiNote.noteOff as MIDIEvent;
-      if (e.ctrlKey) {
-        song.setPlayhead('ticks', noteOn.ticks);
-        if (!song.playing) {
-          song.play();
-        }
-        resetScore();
-        setGraphicalNoteColor(element, 'red');
-      } else {
-        setGraphicalNoteColor(element, 'red');
-        sequencer.processEvent(
-          [
-            sequencer.createMidiEvent(0, 144, noteOn.noteNumber, noteOn.velocity),
-            sequencer.createMidiEvent(noteOff.ticks - noteOn.ticks, 128, noteOff.noteNumber, 0),
-          ],
-          instrumentName
-        );
-      }
-      e.stopImmediatePropagation();
-    });
-    element.addEventListener('mouseup', e => {
-      sequencer.stopProcessEvents();
-      setGraphicalNoteColor(element, 'black');
-    });
-  });
-  // redraw loop selection
-  const boundingBoxes = getBoundingBoxesOfSelectedMeasures(selectedMeasures, osmd);
-  drawLoop(boundingBoxes);
+const movePlayhead = () => {
+  const relPos = song.millis - currentBarStartMillis;
+  divPlayhead.style.left = `${currentBarStartX + relPos * pixelsPerMilli}px`;
+  raqId = requestAnimationFrame(movePlayhead);
 };
 
 const init = async () => {
@@ -252,17 +153,19 @@ const init = async () => {
   // setup controls
   song.addEventListener('stop', () => {
     btnPlay.innerHTML = 'play';
-    cancelAnimationFrame(raqId);
-    resetScore();
+    // cancelAnimationFrame(raqId);
   });
+
   song.addEventListener('pause', () => {
     btnPlay.innerHTML = 'play';
     cancelAnimationFrame(raqId);
   });
+
   song.addEventListener('play', () => {
     btnPlay.innerHTML = 'pause';
-    raqId = requestAnimationFrame(highlight);
+    raqId = requestAnimationFrame(movePlayhead);
   });
+
   song.addEventListener('end', () => {
     btnPlay.innerHTML = 'play';
     cancelAnimationFrame(raqId);
@@ -271,14 +174,33 @@ const init = async () => {
   song.addEventListener('position', 'bar', () => {
     const s = keyEditor.getSnapshot('keyeditor');
     const n = s.notes.active[0];
-    const g = midiToGraphical[n.id];
-    console.log(g.musicSystem['graphicalMeasures']);
-    const measures = g.musicSystem['graphicalMeasures'].find(
-      e => e[0]['measureNumber'] === song.bar
-    );
+    const measures = osmd.GraphicSheet.MeasureList.find(e => e[0]['measureNumber'] === song.bar);
     if (measures) {
-      measures.forEach(m => {
-        console.log(song.bar, m.stave.x, m.stave.width, m.stave.height);
+      const yPos: number[] = [];
+      let x: number = 0;
+      let y: number = 0;
+      let width: number = 0;
+      let height: number = 0;
+      measures.forEach((m, i) => {
+        const stave = m.stave;
+        // console.log(i, stave);
+        ({ x, y, width, height } = stave);
+        yPos.push(y);
+      });
+      currentBarStartMillis = song.getPosition('barsandbeats', song.bar, 0, 0, 0).millis;
+      const endMillis = song.getPosition('barsandbeats', song.bar + 1, 0, 0, 0).millis;
+      const durationMillis = endMillis - currentBarStartMillis;
+      currentBarStartX = x;
+      pixelsPerMilli = width / durationMillis;
+
+      const yMin = Math.min(...yPos);
+      const yMax = Math.max(...yPos);
+      // console.log(yMax, yMin, height, yMax - yMin + height);
+      setPlayhead({
+        x: x + scoreDivOffsetX,
+        y: yMin + scoreDivOffsetY,
+        width: 10,
+        height: yMax - yMin + height,
       });
     }
   });
@@ -295,7 +217,6 @@ const init = async () => {
     e.stopImmediatePropagation();
     song.stop();
     cancelAnimationFrame(raqId);
-    resetScore();
   });
 
   // everything has been setup so we can enable the buttons
@@ -351,7 +272,6 @@ const init = async () => {
       song.setRightLocator('ticks', rightPos.ticks);
       song.setPlayhead('ticks', leftPos.ticks);
       song.setLoop(true);
-      resetScore();
     } else {
       song.setLoop(false);
     }
