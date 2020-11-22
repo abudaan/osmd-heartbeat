@@ -27,9 +27,9 @@ import {
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 
 const ppq = 960;
-// const midiFileName = 'mozk545a_musescore';
-// const midiFile = '../assets/mozk545a_musescore.mid';
-// const mxmlFile = '../assets/mozk545a_musescore.musicxml';
+const midiFileName = 'mozk545a_musescore';
+const midiFile = '../assets/mozk545a_musescore.mid';
+const mxmlFile = '../assets/mozk545a_musescore.musicxml';
 // const midiFileName = 'spring';
 // const midiFile = '../assets/spring.mid';
 // const mxmlFile = '../assets/spring.xml';
@@ -42,9 +42,9 @@ const ppq = 960;
 // const midiFileName = '3b中華色彩s-花非花 (full score)';
 // const midiFile = '../assets/3b中華色彩s-花非花 (full score).mid';
 // const mxmlFile = '../assets/3b中華色彩s-花非花 (vocal score).musicxml';
-const midiFileName = 'full-score';
-const midiFile = '../assets/full-score.mid';
-const mxmlFile = '../assets/vocal-score.musicxml';
+// const midiFileName = 'full-score';
+// const midiFile = '../assets/full-score.mid';
+// const mxmlFile = '../assets/vocal-score.musicxml';
 // const midiFileName = 'mozk545a_4-bars';
 // const midiFile = '../assets/mozk545a_4-bars.mid';
 // const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
@@ -164,7 +164,7 @@ const resize = async () => {
   }[] = mapMIDINoteIdToGraphicalNotePerTrack(graphicalNotesPerBarPerTrack, repeats, song.notes);
 
   mappings.forEach(mapping => {
-    if (mapping.score === 1) {
+    if (mapping.score > 0.6) {
       midiToGraphical = {
         ...midiToGraphical,
         ...mapping.midiToGraphical,

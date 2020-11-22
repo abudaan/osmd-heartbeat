@@ -18861,10 +18861,10 @@ var webdaw_modules_1 = require("webdaw-modules");
 
 var heartbeat_utils_1 = require("./heartbeat-utils");
 
-var ppq = 960; // const midiFileName = 'mozk545a_musescore';
-// const midiFile = '../assets/mozk545a_musescore.mid';
-// const mxmlFile = '../assets/mozk545a_musescore.musicxml';
-// const midiFileName = 'spring';
+var ppq = 960;
+var midiFileName = 'mozk545a_musescore';
+var midiFile = '../assets/mozk545a_musescore.mid';
+var mxmlFile = '../assets/mozk545a_musescore.musicxml'; // const midiFileName = 'spring';
 // const midiFile = '../assets/spring.mid';
 // const mxmlFile = '../assets/spring.xml';
 // const midiFileName = 'mozk545a_2-bars';
@@ -18876,10 +18876,10 @@ var ppq = 960; // const midiFileName = 'mozk545a_musescore';
 // const midiFileName = '3b中華色彩s-花非花 (full score)';
 // const midiFile = '../assets/3b中華色彩s-花非花 (full score).mid';
 // const mxmlFile = '../assets/3b中華色彩s-花非花 (vocal score).musicxml';
-
-var midiFileName = 'full-score';
-var midiFile = '../assets/full-score.mid';
-var mxmlFile = '../assets/vocal-score.musicxml'; // const midiFileName = 'mozk545a_4-bars';
+// const midiFileName = 'full-score';
+// const midiFile = '../assets/full-score.mid';
+// const mxmlFile = '../assets/vocal-score.musicxml';
+// const midiFileName = 'mozk545a_4-bars';
 // const midiFile = '../assets/mozk545a_4-bars.mid';
 // const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
 
@@ -19002,7 +19002,7 @@ var resize = function resize() {
       graphicalNotesPerBarPerTrack = webdaw_modules_1.getGraphicalNotesPerMeasurePerTrack(osmd, ppq);
       mappings = webdaw_modules_1.mapMIDINoteIdToGraphicalNotePerTrack(graphicalNotesPerBarPerTrack, repeats, song.notes);
       mappings.forEach(function (mapping) {
-        if (mapping.score === 1) {
+        if (mapping.score > 0.6) {
           midiToGraphical = __assign(__assign({}, midiToGraphical), mapping.midiToGraphical);
           graphicalToMidi = __assign(__assign({}, graphicalToMidi), mapping.graphicalToMidi);
         }
