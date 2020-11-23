@@ -19,8 +19,8 @@ const updateSongPosition = () => {
 };
 
 const updateBar = () => {
-  const startMillis = song.getPosition('barsandbeats', song.bar, 0, 0, 0).millis;
-  const endMillis = song.getPosition('barsandbeats', song.bar + 1, 0, 0, 0).millis;
+  const startMillis = (song.getPosition('barsandbeats', song.bar, 0, 0, 0) as any).millis;
+  const endMillis = (song.getPosition('barsandbeats', song.bar + 1, 0, 0, 0) as any).millis;
   store.setState({
     currentBar: song.bar,
     currentBarDurationMillis: endMillis - startMillis,

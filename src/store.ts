@@ -24,6 +24,7 @@ export type State = {
   currentBarStartMillis: number;
   currentBarDurationMillis: number;
   pixelsPerMillisecond: number;
+  selectedMeasures: number[];
   boundingBoxes: BoundingBox[];
   width: number;
   loaded: boolean;
@@ -52,6 +53,7 @@ export const store = create<Store>((set, get) => ({
   currentBarStartMillis: 0,
   currentBarDurationMillis: 0,
   pixelsPerMillisecond: 0,
+  selectedMeasures: [],
   boundingBoxes: [],
   width: window.innerWidth,
   loaded: false,

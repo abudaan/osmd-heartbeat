@@ -7,6 +7,8 @@ type BoundingBox = {
   height: number;
 };
 
+// generic util method, will become part of WebDAW
+
 export const getBoundingBoxMeasure = (
   osmd: OpenSheetMusicDisplay,
   measureNumber: number
@@ -19,7 +21,7 @@ export const getBoundingBoxMeasure = (
   if (measures) {
     const yPos: number[] = [];
     measures.forEach((m, i) => {
-      const stave = m.stave;
+      const stave = (m as any).stave;
       // console.log(i, stave);
       ({ x, y, width, height } = stave);
       yPos.push(y);

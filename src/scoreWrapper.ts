@@ -1,28 +1,17 @@
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { loadMusicXMLFile } from 'heartbeat-sequencer';
-import { getSelectedMeasures } from 'webdaw-modules';
+import { getBoundingBoxesOfSelectedMeasures, getSelectedMeasures } from 'webdaw-modules';
 import { store } from './store';
 import { getBoundingBoxMeasure } from './getBoundingBoxMeasure';
 
-const scoreDiv = document.getElementById('score');
-const loadingDiv = document.getElementById('loading');
-
-if (scoreDiv === null || loadingDiv === null) {
-  throw new Error('element not found');
-}
-
-const { mxmlFile, ppq } = store.getState();
-const osmd = new OpenSheetMusicDisplay(scoreDiv, {
-  backend: 'svg',
-  autoResize: false,
-});
+let scoreDiv: HTMLDivElement;
 
 const render = (osmd: OpenSheetMusicDisplay) => {
   osmd.render();
   store.setState({ offsetX: scoreDiv.offsetLeft, offsetY: scoreDiv.offsetTop });
 };
 
-const updateMeasure = (bar: number) => {
+const updateMeasure = (osmd: OpenSheetMusicDisplay, bar: number) => {
   const { x, y, width, height } = getBoundingBoxMeasure(osmd, bar);
   const { offsetX, offsetY, scrollPos, currentBarDurationMillis } = store.getState();
   store.setState({
@@ -37,7 +26,19 @@ const updateMeasure = (bar: number) => {
   });
 };
 
-export const setup = async (): Promise<{ cleanup: () => void }> => {
+export const getPositionInMeasure = (e: MouseEvent) => {
+  const x = e.clientX;
+  const y = e.clientY;
+};
+
+export const setup = async (div: HTMLDivElement): Promise<{ cleanup: () => void }> => {
+  scoreDiv = div;
+  const { mxmlFile, ppq } = store.getState();
+  const osmd = new OpenSheetMusicDisplay(scoreDiv, {
+    backend: 'svg',
+    autoResize: false,
+  });
+
   console.log(`OSMD: ${osmd.Version}`);
 
   const xmlDoc = await loadMusicXMLFile(mxmlFile);
@@ -47,22 +48,13 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
   // });
 
   const unsub1 = store.subscribe(
-    loaded => {
-      if (loaded === true) {
-        loadingDiv.style.display = 'none';
-      }
-    },
-    state => state.loaded
-  );
-
-  const unsub2 = store.subscribe(
     (bar: number) => {
-      updateMeasure(bar);
+      updateMeasure(osmd, bar);
     },
     state => state.currentBar
   );
 
-  const unsub3 = store.subscribe(
+  const unsub2 = store.subscribe(
     (selectionRectangle: number[]) => {
       const { barNumbers, boundingBoxes } = getSelectedMeasures(
         osmd,
@@ -75,25 +67,29 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
           y: selectionRectangle[3],
         }
       );
-      store.setState({ boundingBoxes });
+      store.setState({ boundingBoxes, selectedMeasures: barNumbers });
     },
     (state): number[] => state.selection
   );
 
-  const unsub4 = store.subscribe(
+  const unsub3 = store.subscribe(
     (loaded: boolean) => {
       if (loaded) {
         const bar = store.getState().currentBar;
-        updateMeasure(bar);
+        updateMeasure(osmd, bar);
         // console.log('updateMeasure');
       }
     },
     (state): boolean => state.loaded
   );
 
-  const unsub5 = store.subscribe(
+  const unsub4 = store.subscribe(
     () => {
       render(osmd);
+      updateMeasure(osmd, store.getState().currentBar);
+      const { selectedMeasures } = store.getState();
+      const boundingBoxes = getBoundingBoxesOfSelectedMeasures(selectedMeasures, osmd);
+      store.setState({ boundingBoxes });
     },
     state => state.width
   );
@@ -106,7 +102,6 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
       unsub2();
       unsub3();
       unsub4();
-      unsub5();
     },
   };
 };

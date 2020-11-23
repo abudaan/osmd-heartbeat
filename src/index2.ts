@@ -1,31 +1,39 @@
 import { getVersion } from 'webdaw-modules';
-import { setup as setupDrawSelection, startSelect } from './drawSelection';
+import { store } from './store';
 import { setup as setupSong } from './songWrapper';
-import { setup as setupScore } from './scoreWrapper';
+import { setup as setupScore, getPositionInMeasure } from './scoreWrapper';
 import { setup as setupControls } from './controls';
 import { setup as setupPlayhead } from './playhead';
-import { store } from './store';
+import { setup as setupDrawSelection, startSelect } from './drawSelection';
+
+const scoreDiv = document.getElementById('score') as HTMLDivElement;
+const loadingDiv = document.getElementById('loading');
+
+if (scoreDiv === null || loadingDiv === null) {
+  throw new Error('element not found');
+}
 
 console.log(`WebDAW: ${getVersion()}`);
 
 let raqId: number;
 
 const loop = () => {
+  // you can do something here if necessary
   raqId = requestAnimationFrame(loop);
 };
 
 const init = async () => {
   await setupSong();
-  await setupScore();
+  await setupScore(scoreDiv);
   setupControls();
-  setupDrawSelection();
   setupPlayhead();
+  setupDrawSelection();
 
-  window.addEventListener('resize', async () => {
+  window.addEventListener('resize', () => {
     store.setState({ width: window.innerWidth });
   });
 
-  window.addEventListener('scroll', e => {
+  window.addEventListener('scroll', () => {
     store.setState({ scrollPos: window.scrollY });
   });
 
@@ -37,11 +45,11 @@ const init = async () => {
     }
   });
 
-  document.addEventListener('mousedown', e => {
+  scoreDiv.addEventListener('mousedown', e => {
     if (e.ctrlKey) {
       startSelect(e);
     } else {
-      // setPlayhead(e);
+      getPositionInMeasure(e);
     }
   });
 
@@ -57,7 +65,7 @@ const init = async () => {
     state => state.songState
   );
 
-  // everything has been setup so we can enable the buttons
+  loadingDiv.style.display = 'none';
   store.setState({ loaded: true });
 };
 

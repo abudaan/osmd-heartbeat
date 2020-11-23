@@ -13,11 +13,9 @@ if (selectionDiv === null || selectedBarsDiv === null) {
 let offsetX: number;
 let offsetY: number;
 let scrollPos: number;
-let localBoundingBoxes: BoundingBox[] = [];
 
 // draw rectangles on the score to indicate the set loop
 const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
-  localBoundingBoxes = boundingBoxes;
   // selectedBarsDiv.style.display = 'none';
   while (selectedBarsDiv.firstChild) {
     selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
@@ -75,26 +73,28 @@ export const startSelect = (e: MouseEvent) => {
 export const setup = () => {
   ({ offsetX, offsetY, scrollPos } = store.getState());
 
-  store.subscribe(
+  const unsub1 = store.subscribe(
     (x: number) => {
       offsetX = x;
     },
     (state): number => state.offsetX
   );
-  store.subscribe(
+
+  const unsub2 = store.subscribe(
     (y: number) => {
       offsetY = y;
     },
     (state): number => state.offsetY
   );
-  store.subscribe(
+
+  const unsub3 = store.subscribe(
     (s: number) => {
       scrollPos = s;
     },
     (state): number => state.scrollPos
   );
 
-  store.subscribe(
+  const unsub4 = store.subscribe(
     (boundingBoxes: BoundingBox[]) => {
       drawLoop(boundingBoxes);
     },
@@ -102,8 +102,11 @@ export const setup = () => {
   );
 
   return {
-    drawLoop: () => {
-      drawLoop(localBoundingBoxes);
+    cleanup: () => {
+      unsub1();
+      unsub2();
+      unsub3();
+      unsub4();
     },
   };
 };
