@@ -1,4 +1,4 @@
-import { BoundingBoxMeasure } from 'webdaw-modules';
+import { BoundingBox, BoundingBoxMeasure } from 'webdaw-modules';
 import { store } from './store';
 
 const selectionDiv = document.getElementById('selection');
@@ -13,32 +13,11 @@ if (selectionDiv === null || selectedBarsDiv === null) {
 let offsetX: number;
 let offsetY: number;
 let scrollPos: number;
-
-export const setup = () => {
-  ({ offsetX, offsetY, scrollPos } = store.getState());
-
-  store.subscribe(
-    (x: number) => {
-      offsetX = x;
-    },
-    (state): number => state.offsetX
-  );
-  store.subscribe(
-    (y: number) => {
-      offsetY = y;
-    },
-    (state): number => state.offsetY
-  );
-  store.subscribe(
-    (s: number) => {
-      scrollPos = s;
-    },
-    (state): number => state.scrollPos
-  );
-};
+let localBoundingBoxes: BoundingBox[] = [];
 
 // draw rectangles on the score to indicate the set loop
-export const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
+const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
+  localBoundingBoxes = boundingBoxes;
   // selectedBarsDiv.style.display = 'none';
   while (selectedBarsDiv.firstChild) {
     selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
@@ -91,4 +70,40 @@ export const startSelect = (e: MouseEvent) => {
   selectionDiv.style.display = 'block';
   document.addEventListener('mouseup', stopSelect);
   document.addEventListener('mousemove', drawSelect);
+};
+
+export const setup = () => {
+  ({ offsetX, offsetY, scrollPos } = store.getState());
+
+  store.subscribe(
+    (x: number) => {
+      offsetX = x;
+    },
+    (state): number => state.offsetX
+  );
+  store.subscribe(
+    (y: number) => {
+      offsetY = y;
+    },
+    (state): number => state.offsetY
+  );
+  store.subscribe(
+    (s: number) => {
+      scrollPos = s;
+    },
+    (state): number => state.scrollPos
+  );
+
+  store.subscribe(
+    (boundingBoxes: BoundingBox[]) => {
+      drawLoop(boundingBoxes);
+    },
+    (state): BoundingBox[] => state.boundingBoxes
+  );
+
+  return {
+    drawLoop: () => {
+      drawLoop(localBoundingBoxes);
+    },
+  };
 };
