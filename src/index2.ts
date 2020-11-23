@@ -8,43 +8,16 @@ import sequencer, {
 } from 'heartbeat-sequencer';
 import {
   parseMusicXML,
-  setGraphicalNoteColor,
-  MusicSystemShim,
   getVersion,
-  NoteMappingMIDIToGraphical,
-  getSelectedMeasures,
   getBoundingBoxesOfSelectedMeasures,
-  NoteMappingGraphicalToMIDI,
-  GraphicalNoteData,
-  BoundingBoxMeasure,
+  getSelectedMeasures,
 } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
+import { midiFileName, midiFile, mxmlFile } from './files';
+import { setup as setupDrawSelection, startSelect, drawLoop } from './drawSelection';
+import { store } from './store';
 
 const ppq = 960;
-// const midiFileName = 'mozk545a_musescore';
-// const midiFile = '../assets/mozk545a_musescore.mid';
-// const mxmlFile = '../assets/mozk545a_musescore.musicxml';
-// const midiFileName = 'spring';
-// const midiFile = '../assets/spring.mid';
-// const mxmlFile = '../assets/spring.xml';
-// const midiFileName = 'mozk545a_2-bars';
-// const midiFile = '../assets/mozk545a_2-bars.mid';
-// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
-const midiFileName = 'Canon_in_D__Pachelbel__Guitar_Tab';
-const midiFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.mid';
-const mxmlFile = '../assets/Canon_in_D__Pachelbel__Guitar_Tab.musicxml';
-// const midiFileName = 'mozk545a_2-bars_2-tracks';
-// const midiFile = '../assets/mozk545a_2-bars_2-tracks.mid';
-// const mxmlFile = '../assets/mozk545a_2-bars.musicxml';
-// const midiFileName = '3b中華色彩s-花非花 (full score)';
-// const midiFile = '../assets/3b中華色彩s-花非花 (full score).mid';
-// const mxmlFile = '../assets/3b中華色彩s-花非花 (vocal score).musicxml';
-// const midiFileName = 'full-score';
-// const midiFile = '../assets/full-score.mid';
-// const mxmlFile = '../assets/vocal-score.musicxml';
-// const midiFileName = 'mozk545a_4-bars';
-// const midiFile = '../assets/mozk545a_4-bars.mid';
-// const mxmlFile = '../assets/mozk545a_4-bars.musicxml';
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
 const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
@@ -65,14 +38,47 @@ let reference = -1;
 // requestAnimationFrame id for highlighting the active notes
 let raqId: number;
 
+store.subscribe(
+  (selectionRectangle: number[]) => {
+    const { barNumbers, boundingBoxes } = getSelectedMeasures(
+      osmd,
+      {
+        x: selectionRectangle[0],
+        y: selectionRectangle[1],
+      },
+      {
+        x: selectionRectangle[2],
+        y: selectionRectangle[3],
+      }
+    );
+
+    selectedMeasures = barNumbers;
+    // console.log(selectedMeasures, boundingBoxes);
+
+    if (boundingBoxes.length > 0) {
+      let left = boundingBoxes[0].measureNumber;
+      let right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
+      const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
+      const rightPos = song.getPosition('barsbeats', right, 1, 1, 0);
+      song.setLeftLocator('ticks', leftPos.ticks);
+      song.setRightLocator('ticks', rightPos.ticks);
+      song.setPlayhead('ticks', leftPos.ticks);
+      song.setLoop(true);
+    } else {
+      song.setLoop(false);
+    }
+    drawLoop(boundingBoxes);
+  },
+  (state): number[] => state.selection
+);
+
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
 const divPlayhead = document.getElementById('playhead') as HTMLDivElement;
 const scoreDiv = document.getElementById('score');
 const loadingDiv = document.getElementById('loading');
-const selectionDiv = document.getElementById('selection');
-const selectedBarsDiv = document.getElementById('selected-bars');
-if (scoreDiv === null || selectionDiv === null || loadingDiv === null || selectedBarsDiv === null) {
+
+if (scoreDiv === null || loadingDiv === null) {
   throw new Error('element not found');
 }
 
@@ -83,34 +89,14 @@ const osmd = new OpenSheetMusicDisplay(scoreDiv, {
 console.log(`OSMD: ${osmd.Version}`);
 console.log(`WebDAW: ${getVersion()}`);
 
-// draw rectangles on the score to indicate the set loop
-const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
-  // selectedBarsDiv.style.display = 'none';
-  while (selectedBarsDiv.firstChild) {
-    selectedBarsDiv.removeChild(selectedBarsDiv.firstChild);
-  }
-  if (boundingBoxes.length > 0) {
-    selectedBarsDiv.style.display = 'block';
-    boundingBoxes.forEach(bbox => {
-      const d = document.createElement('div');
-      d.className = 'bar';
-      d.style.left = `${bbox.left + scoreDivOffsetX}px`;
-      d.style.top = `${bbox.top + scoreDivOffsetY}px`;
-      d.style.height = `${bbox.bottom - bbox.top}px`;
-      d.style.width = `${bbox.right - bbox.left}px`;
-      selectedBarsDiv.appendChild(d);
-    });
-  }
-};
-
 const resize = async () => {
   osmd.render();
   scoreDivOffsetX = scoreDiv.offsetLeft;
   scoreDivOffsetY = scoreDiv.offsetTop;
+  store.setState({ offsetX: scoreDivOffsetX, offsetY: scoreDivOffsetY });
   // redraw loop selection
   const boundingBoxes = getBoundingBoxesOfSelectedMeasures(selectedMeasures, osmd);
   drawLoop(boundingBoxes);
-
   // osmd.GraphicSheet.MeasureList.forEach((measure, measureNumber) => {
   //   console.log(measure, measureNumber);
   // });
@@ -126,7 +112,7 @@ const setPlayhead = (args: { x: number; y: number; width: number; height: number
 
 const movePlayhead = () => {
   const relPos = song.millis - currentBarStartMillis;
-  divPlayhead.style.left = `${currentBarStartX + relPos * pixelsPerMilli}px`;
+  divPlayhead.style.left = `${scoreDivOffsetX + currentBarStartX + relPos * pixelsPerMilli}px`;
   raqId = requestAnimationFrame(movePlayhead);
 };
 
@@ -180,8 +166,6 @@ const init = async () => {
   });
 
   song.addEventListener('position', 'bar', () => {
-    // const s = keyEditor.getSnapshot('keyeditor');
-    // const n = s.notes.active[0];
     const measures = osmd.GraphicSheet.MeasureList.find(e => e[0]['measureNumber'] === song.bar);
     if (measures) {
       const yPos: number[] = [];
@@ -236,71 +220,9 @@ const init = async () => {
     await resize();
   });
 
-  const selectionStartPoint: { x: number; y: number } = { x: -1, y: -1 };
-  const selectionEndPoint: { x: number; y: number } = { x: -1, y: -1 };
-  const drawSelect = (e: MouseEvent) => {
-    selectionDiv.style.left = `${selectionStartPoint.x}px`;
-    selectionDiv.style.top = `${selectionStartPoint.y + scrollPos}px`;
-    selectionDiv.style.width = `${e.clientX - selectionStartPoint.x}px`;
-    selectionDiv.style.height = `${e.clientY - selectionStartPoint.y}px`;
-    selectionEndPoint.x = e.clientX;
-    selectionEndPoint.y = e.clientY;
-  };
-
-  const stopSelect = (e: MouseEvent) => {
-    // document.removeEventListener('mousedown', startSelect);
-    document.removeEventListener('mouseup', stopSelect);
-    document.removeEventListener('mousemove', drawSelect);
-    selectionDiv.style.display = 'none';
-    selectionDiv.style.left = '0px';
-    selectionDiv.style.top = '0px';
-    selectionDiv.style.width = '0px';
-    selectionDiv.style.height = '0px';
-    const { barNumbers, boundingBoxes } = getSelectedMeasures(
-      osmd,
-      {
-        x: selectionStartPoint.x - scoreDivOffsetX,
-        y: selectionStartPoint.y - scoreDivOffsetY + scrollPos,
-      },
-      {
-        x: selectionEndPoint.x - scoreDivOffsetX,
-        y: selectionEndPoint.y - scoreDivOffsetY + scrollPos,
-      }
-    );
-
-    selectedMeasures = barNumbers;
-    // console.log(selectedMeasures, boundingBoxes);
-
-    if (boundingBoxes.length > 0) {
-      let left = boundingBoxes[0].measureNumber;
-      let right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
-      const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
-      const rightPos = song.getPosition('barsbeats', right, 1, 1, 0);
-      song.setLeftLocator('ticks', leftPos.ticks);
-      song.setRightLocator('ticks', rightPos.ticks);
-      song.setPlayhead('ticks', leftPos.ticks);
-      song.setLoop(true);
-    } else {
-      song.setLoop(false);
-    }
-    drawLoop(boundingBoxes);
-  };
-
-  const startSelect = (e: MouseEvent) => {
-    if (e.target === btnPlay || e.target === btnStop) {
-      return;
-    }
-    selectionStartPoint.x = e.clientX;
-    selectionStartPoint.y = e.clientY;
-    selectionDiv.style.display = 'block';
-    document.addEventListener('mouseup', stopSelect);
-    document.addEventListener('mousemove', drawSelect);
-  };
-
-  // song.setTempo(200);
-  document.addEventListener('mousedown', startSelect);
   window.addEventListener('scroll', e => {
     scrollPos = window.scrollY;
+    store.setState({ scrollPos });
   });
   document.addEventListener('keydown', e => {
     if (e.keyCode === 13) {
@@ -311,6 +233,12 @@ const init = async () => {
       }
     } else if (e.keyCode === 96) {
       song.stop();
+    }
+  });
+  setupDrawSelection();
+  document.addEventListener('mousedown', e => {
+    if (e.ctrlKey) {
+      startSelect(e);
     }
   });
 };
