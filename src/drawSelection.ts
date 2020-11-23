@@ -1,6 +1,7 @@
 import { BoundingBox, BoundingBoxMeasure } from 'webdaw-modules';
 import { store } from './store';
 
+let element: HTMLElement;
 const selectionDiv = document.getElementById('selection');
 const selectedBarsDiv = document.getElementById('selected-bars');
 const selectionStartPoint: { x: number; y: number } = { x: -1, y: -1 };
@@ -45,20 +46,15 @@ const drawSelect = (e: MouseEvent) => {
 
 const stopSelect = (e: MouseEvent) => {
   // document.removeEventListener('mousedown', startSelect);
-  document.removeEventListener('mouseup', stopSelect);
-  document.removeEventListener('mousemove', drawSelect);
+  element.removeEventListener('mouseup', stopSelect);
+  element.removeEventListener('mousemove', drawSelect);
   selectionDiv.style.display = 'none';
   selectionDiv.style.left = '0px';
   selectionDiv.style.top = '0px';
   selectionDiv.style.width = '0px';
   selectionDiv.style.height = '0px';
   store.setState({
-    selection: [
-      selectionStartPoint.x - offsetX,
-      selectionStartPoint.y - offsetY + scrollPos,
-      selectionEndPoint.x - offsetX,
-      selectionEndPoint.y - offsetY + scrollPos,
-    ],
+    selection: [ selectionStartPoint.x, selectionStartPoint.y, selectionEndPoint.x, selectionEndPoint.y, ],
   });
 };
 
@@ -66,11 +62,12 @@ export const startSelect = (e: MouseEvent) => {
   selectionStartPoint.x = e.clientX;
   selectionStartPoint.y = e.clientY;
   selectionDiv.style.display = 'block';
-  document.addEventListener('mouseup', stopSelect);
-  document.addEventListener('mousemove', drawSelect);
+  element.addEventListener('mouseup', stopSelect);
+  element.addEventListener('mousemove', drawSelect);
 };
 
-export const setup = () => {
+export const setup = (el: HTMLElement) => {
+  element = el;
   ({ offsetX, offsetY, scrollPos } = store.getState());
 
   const unsub1 = store.subscribe(

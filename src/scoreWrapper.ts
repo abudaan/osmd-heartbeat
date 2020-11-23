@@ -56,17 +56,19 @@ export const setup = async (div: HTMLDivElement): Promise<{ cleanup: () => void 
 
   const unsub2 = store.subscribe(
     (selectionRectangle: number[]) => {
+      const { offsetX, offsetY, scrollPos } = store.getState();
       const { barNumbers, boundingBoxes } = getSelectedMeasures(
         osmd,
         {
-          x: selectionRectangle[0],
-          y: selectionRectangle[1],
+          x: selectionRectangle[0] - offsetX,
+          y: selectionRectangle[1] + scrollPos - offsetY,
         },
         {
-          x: selectionRectangle[2],
-          y: selectionRectangle[3],
+          x: selectionRectangle[2] - offsetX,
+          y: selectionRectangle[3] + scrollPos - offsetY,
         }
       );
+      console.log(barNumbers);
       store.setState({ boundingBoxes, selectedMeasures: barNumbers });
     },
     (state): number[] => state.selection

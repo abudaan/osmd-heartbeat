@@ -27,7 +27,7 @@ const init = async () => {
   await setupScore(scoreDiv);
   setupControls();
   setupPlayhead();
-  setupDrawSelection();
+  setupDrawSelection(document);
 
   window.addEventListener('resize', () => {
     store.setState({ width: window.innerWidth });

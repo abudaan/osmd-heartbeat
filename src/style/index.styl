@@ -8,6 +8,7 @@ body
   margin 0
 
 .unselectable 
+  margin-left: 100px;
   -moz-user-select none; 
   -khtml-user-select none; 
   -webkit-user-select none; 
@@ -37,7 +38,7 @@ body
     // border-radius 4px
 
 #selection 
-  z-index 100
+  z-index 101
   position absolute
   background-color rgba(0,0,200, 0.1)
   display none
@@ -46,6 +47,7 @@ body
   z-index 100
   position absolute
   display none
+
   .bar
     background-color rgba(0,0,200, 0.1)
     position absolute
@@ -55,5 +57,5 @@ body
   position absolute
   background-color rgba(255, 0, 0, 0.3)
 
-// #controls
-//   height: 500px
+#controls
+  height: 500px
