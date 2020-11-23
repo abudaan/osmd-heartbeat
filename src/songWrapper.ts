@@ -28,6 +28,12 @@ const updateBar = () => {
   });
 };
 
+const stopSong = () => {
+  store.setState({ songState: 'stop' });
+  cancelAnimationFrame(raqId);
+  updateBar();
+};
+
 export const setup = async (): Promise<{ cleanup: () => void }> => {
   await sequencer.ready();
 
@@ -48,25 +54,9 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
     track.setInstrument(instrumentName);
   });
 
-  song.addEventListener('stop', () => {
-    store.setState({ songState: 'stop' });
-    cancelAnimationFrame(raqId);
-    updateBar();
-  });
+  song.addEventListener('stop', stopSong);
 
-  song.addEventListener('pause', () => {
-    cancelAnimationFrame(raqId);
-  });
-
-  song.addEventListener('play', () => {
-    raqId = requestAnimationFrame(updateSongPosition);
-  });
-
-  song.addEventListener('end', () => {
-    store.setState({ songState: 'stop' });
-    cancelAnimationFrame(raqId);
-    updateBar();
-  });
+  song.addEventListener('end', stopSong);
 
   song.addEventListener('position', 'bar', updateBar);
 
@@ -74,8 +64,7 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
     songState => {
       if (songState === 'stop') {
         song.stop();
-        cancelAnimationFrame(raqId);
-        updateBar();
+        stopSong();
       } else if (songState === 'play') {
         song.play();
         raqId = requestAnimationFrame(updateSongPosition);
