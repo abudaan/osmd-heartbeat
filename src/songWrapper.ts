@@ -1,5 +1,5 @@
 import sequencer from 'heartbeat-sequencer';
-import { BoundingBox } from 'webdaw-modules';
+import { BoundingBoxMeasure } from 'webdaw-modules';
 import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
 import { store } from './store';
 
@@ -9,13 +9,32 @@ const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
 
 let raqId: number;
 let song: Heartbeat.Song;
+let repeats: number[][] = [];
 let keyEditor: Heartbeat.KeyEditor;
-
-const { midiFileName, midiFile } = store.getState();
+let hasRepeated: { [index: number]: boolean } = {};
 
 const updateSongPosition = () => {
   store.setState({ currentPosition: song.millis });
   raqId = requestAnimationFrame(updateSongPosition);
+};
+
+const checkRepeat = () => {
+  let bar = song.bar;
+
+  if (!repeats.length) {
+    return song.bar;
+  }
+
+  repeats.forEach((repeat, i) => {
+    if (song.bar === repeat[1]) {
+      if (hasRepeated[i] !== true) {
+        bar = repeat[0] - 1;
+        hasRepeated[i] = true;
+      }
+    }
+  });
+
+  return bar;
 };
 
 const updateBar = () => {
@@ -24,6 +43,7 @@ const updateBar = () => {
   const endMillis = (song.getPosition('barsandbeats', song.bar + 1, 0, 0, 0) as any).millis;
   store.setState({
     currentBar: song.bar,
+    currentBarScore: checkRepeat(),
     currentBarDurationMillis: endMillis - startMillis,
     currentBarStartMillis: startMillis,
   });
@@ -33,10 +53,12 @@ const stopSong = () => {
   store.setState({ songState: 'stop' });
   cancelAnimationFrame(raqId);
   updateBar();
+  hasRepeated = {};
 };
 
 export const setup = async (): Promise<{ cleanup: () => void }> => {
   await sequencer.ready();
+  const { midiFileName, midiFile } = store.getState();
 
   // load MIDI file and setup song
   await loadMIDIFile(midiFile);
@@ -78,7 +100,7 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
   );
 
   const unsub2 = store.subscribe(
-    (boundingBoxes: BoundingBox[]) => {
+    (boundingBoxes: BoundingBoxMeasure[]) => {
       if (boundingBoxes.length > 0) {
         let left = boundingBoxes[0].measureNumber;
         let right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
@@ -95,12 +117,30 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
     state => state.boundingBoxes
   );
 
+  const unsub3 = store.subscribe(
+    (currentBar: number) => {
+      if (currentBar !== song.bar) {
+        const { millis } = song.getPosition('barsandbeats', currentBar, 0, 0, 0) as any;
+        song.setPlayhead('millis', millis);
+      }
+    },
+    state => state.currentBar
+  );
+
+  const unsub4 = store.subscribe(
+    (r: number[][]) => {
+      repeats = r;
+    },
+    state => state.repeats
+  );
   updateBar();
 
   return {
     cleanup: () => {
       unsub1();
       unsub2();
+      unsub3();
+      unsub4();
     },
   };
 };

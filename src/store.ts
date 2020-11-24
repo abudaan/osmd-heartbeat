@@ -19,6 +19,7 @@ export type State = {
   };
   currentPosition: number;
   currentBar: number;
+  currentBarScore: number;
   currentBarStartX: number;
   currentBarStartMillis: number;
   currentBarDurationMillis: number;
@@ -27,6 +28,8 @@ export type State = {
   boundingBoxes: BoundingBoxMeasure[];
   width: number;
   loaded: boolean;
+  repeats: number[][];
+  initialTempo: number;
 };
 
 export type Reducers = {
@@ -46,6 +49,7 @@ export const store = create<Store>((set, get) => ({
   ppq: 960,
   playhead: { x: 0, y: 0, width: 10, height: 0 },
   currentBar: 1,
+  currentBarScore: 1,
   currentPosition: 0,
   currentBarStartX: 0,
   currentBarStartMillis: 0,
@@ -54,6 +58,8 @@ export const store = create<Store>((set, get) => ({
   selectedMeasures: [],
   boundingBoxes: [],
   width: window.innerWidth,
+  repeats: [],
+  initialTempo: 90,
   loaded: false,
   toggleSongState: () => {
     set(state => {
