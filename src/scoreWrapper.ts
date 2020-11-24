@@ -8,17 +8,21 @@ let scoreDiv: HTMLDivElement;
 
 const render = (osmd: OpenSheetMusicDisplay) => {
   osmd.render();
-  store.setState({ offsetX: scoreDiv.offsetLeft, offsetY: scoreDiv.offsetTop });
+  store.setState({ offset: { x: scoreDiv.offsetLeft, y: scoreDiv.offsetTop } });
 };
 
 const updateMeasure = (osmd: OpenSheetMusicDisplay, bar: number) => {
   const { x, y, width, height } = getBoundingBoxMeasure(osmd, bar);
-  const { offsetX, offsetY, scrollPos, currentBarDurationMillis } = store.getState();
+  const {
+    offset: { x: offsetX, y: offsetY },
+    scrollPos: { x: scrollPosX, y: scrollPosY },
+    currentBarDurationMillis,
+  } = store.getState();
   store.setState({
     currentBarStartX: x,
     playhead: {
-      x: x + offsetX,
-      y: y + offsetY + scrollPos,
+      x: x + offsetX + scrollPosX,
+      y: y + offsetY + scrollPosY,
       width,
       height,
     },
@@ -29,6 +33,7 @@ const updateMeasure = (osmd: OpenSheetMusicDisplay, bar: number) => {
 export const getPositionInMeasure = (e: MouseEvent) => {
   const x = e.clientX;
   const y = e.clientY;
+  // TBD
 };
 
 export const setup = async (div: HTMLDivElement): Promise<{ cleanup: () => void }> => {
@@ -56,19 +61,22 @@ export const setup = async (div: HTMLDivElement): Promise<{ cleanup: () => void 
 
   const unsub2 = store.subscribe(
     (selectionRectangle: number[]) => {
-      const { offsetX, offsetY, scrollPos } = store.getState();
+      const {
+        offset: { x: offsetX, y: offsetY },
+        scrollPos: { x: scrollPosX, y: scrollPosY },
+      } = store.getState();
       const { barNumbers, boundingBoxes } = getSelectedMeasures(
         osmd,
         {
-          x: selectionRectangle[0] - offsetX,
-          y: selectionRectangle[1] + scrollPos - offsetY,
+          x: selectionRectangle[0] + scrollPosX - offsetX,
+          y: selectionRectangle[1] + scrollPosY - offsetY,
         },
         {
-          x: selectionRectangle[2] - offsetX,
-          y: selectionRectangle[3] + scrollPos - offsetY,
+          x: selectionRectangle[2] + scrollPosX - offsetX,
+          y: selectionRectangle[3] + scrollPosY - offsetY,
         }
       );
-      console.log(barNumbers);
+      // console.log(barNumbers);
       store.setState({ boundingBoxes, selectedMeasures: barNumbers });
     },
     (state): number[] => state.selection

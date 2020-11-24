@@ -1,11 +1,10 @@
-import { BoundingBox } from 'webdaw-modules';
+import { BoundingBoxMeasure } from 'webdaw-modules';
 import create from 'zustand/vanilla';
 import { midiFileName, midiFile, mxmlFile } from './files';
 
 export type State = {
-  offsetX: number;
-  offsetY: number;
-  scrollPos: number;
+  offset: { x: number; y: number };
+  scrollPos: { x: number; y: number };
   selection: number[];
   songState: 'play' | 'pause' | 'stop';
   midiFileName: string;
@@ -25,7 +24,7 @@ export type State = {
   currentBarDurationMillis: number;
   pixelsPerMillisecond: number;
   selectedMeasures: number[];
-  boundingBoxes: BoundingBox[];
+  boundingBoxes: BoundingBoxMeasure[];
   width: number;
   loaded: boolean;
 };
@@ -37,9 +36,8 @@ export type Reducers = {
 export type Store = State & Reducers;
 
 export const store = create<Store>((set, get) => ({
-  offsetX: 0,
-  offsetY: 0,
-  scrollPos: 0,
+  offset: { x: 0, y: 0 },
+  scrollPos: { x: 0, y: 0 },
   selection: [],
   songState: 'stop',
   midiFileName,
