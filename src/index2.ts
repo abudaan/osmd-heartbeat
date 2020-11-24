@@ -1,9 +1,9 @@
 import { getVersion } from 'webdaw-modules';
 import { store } from './store';
 import { setup as setupSong } from './songWrapper';
-import { setup as setupScore, getPositionInMeasure } from './scoreWrapper';
+import { setup as setupScore } from './scoreWrapper';
 import { setup as setupControls } from './controls';
-import { setup as setupPlayhead } from './playhead';
+import { setPlayheadByPointerEvent, setup as setupPlayhead } from './playhead';
 import { setup as setupDrawLoop } from './drawLoop';
 import { setup as setupDrawSelection, startSelect } from './drawSelection';
 
@@ -55,7 +55,7 @@ const init = async () => {
     if (e.ctrlKey) {
       startSelect(e);
     } else {
-      getPositionInMeasure(e);
+      setPlayheadByPointerEvent(e as PointerEvent);
     }
   });
 

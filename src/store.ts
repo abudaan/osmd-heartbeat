@@ -11,12 +11,6 @@ export type State = {
   midiFile: string;
   mxmlFile: string;
   ppq: number;
-  playhead: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
   currentPosition: number;
   currentBar: number;
   currentBarScore: number;
@@ -25,7 +19,6 @@ export type State = {
   currentBarDurationMillis: number;
   pixelsPerMillisecond: number;
   selectedMeasures: number[];
-  boundingBoxes: BoundingBoxMeasure[];
   width: number;
   loaded: boolean;
   repeats: number[][];
@@ -47,7 +40,6 @@ export const store = create<Store>((set, get) => ({
   midiFile,
   mxmlFile,
   ppq: 960,
-  playhead: { x: 0, y: 0, width: 10, height: 0 },
   currentBar: 1,
   currentBarScore: 1,
   currentPosition: 0,
@@ -56,7 +48,6 @@ export const store = create<Store>((set, get) => ({
   currentBarDurationMillis: 0,
   pixelsPerMillisecond: 0,
   selectedMeasures: [],
-  boundingBoxes: [],
   width: window.innerWidth,
   repeats: [],
   initialTempo: 90,

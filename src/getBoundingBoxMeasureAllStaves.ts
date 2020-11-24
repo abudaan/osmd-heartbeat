@@ -9,19 +9,19 @@ type BoundingBox = {
 
 // generic util method, will become part of WebDAW
 
-export const getBoundingBoxMeasure = (
+export const getBoundingBoxMeasureAllStaves = (
   osmd: OpenSheetMusicDisplay,
   measureNumber: number
 ): BoundingBox => {
-  const measures = osmd.GraphicSheet.MeasureList.find(e => e[0]['measureNumber'] === measureNumber);
+  const staves = osmd.GraphicSheet.MeasureList.find(e => e[0]['measureNumber'] === measureNumber);
   let x: number = 0;
   let y: number = 0;
   let width: number = 0;
   let height: number = 0;
-  if (measures) {
+  if (staves) {
     const yPos: number[] = [];
-    measures.forEach((m, i) => {
-      const stave = (m as any).stave;
+    staves.forEach((s, i) => {
+      const stave = (s as any).stave;
       // console.log(i, stave);
       ({ x, y, width, height } = stave);
       yPos.push(y);

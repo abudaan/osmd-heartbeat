@@ -1,14 +1,15 @@
-import { BoundingBoxMeasure } from 'webdaw-modules';
+import {
+  BoundingBoxMeasure,
+  getBoundingBoxesOfSelectedMeasures,
+  getSelectedMeasures,
+} from 'webdaw-modules';
+import { getOSMD } from './scoreWrapper';
 import { store } from './store';
 
 let div: HTMLDivElement;
-let offsetX: number;
-let offsetY: number;
-let scrollPosX: number;
-let scrollPosY: number;
 
 // draw rectangles on the score to indicate the set loop
-const drawLoop = (boundingBoxes: BoundingBoxMeasure[]) => {
+const drawLoop = (boundingBoxes: BoundingBoxMeasure[], offsetX: number, offsetY: number) => {
   // div.style.display = 'none';
   while (div.firstChild) {
     div.removeChild(div.firstChild);
@@ -37,37 +38,47 @@ export const setup = () => {
     }
   });
 
-  ({
-    offset: { x: offsetX, y: offsetY },
-    scrollPos: { x: scrollPosX, y: scrollPosY },
-  } = store.getState());
-
   const unsub1 = store.subscribe(
-    (x: number) => {
-      offsetX = x;
+    (selection: number[]) => {
+      const {
+        offset: { x: offsetX, y: offsetY },
+        scrollPos: { x: scrollPosX, y: scrollPosY },
+      } = store.getState();
+      const { barNumbers, boundingBoxes } = getSelectedMeasures(
+        getOSMD(),
+        {
+          x: selection[0] + scrollPosX - offsetX,
+          y: selection[1] + scrollPosY - offsetY,
+        },
+        {
+          x: selection[2] + scrollPosX - offsetX,
+          y: selection[3] + scrollPosY - offsetY,
+        }
+      );
+      // console.log(barNumbers);
+      store.setState({ selectedMeasures: barNumbers });
+
+      drawLoop(boundingBoxes, offsetX, offsetY);
     },
-    (state): number => state.offset.x
+    state => state.selection
   );
 
   const unsub2 = store.subscribe(
-    (y: number) => {
-      offsetY = y;
+    () => {
+      const {
+        selectedMeasures,
+        offset: { x: offsetX, y: offsetY },
+      } = store.getState();
+      const boundingBoxes = getBoundingBoxesOfSelectedMeasures(selectedMeasures, getOSMD());
+      drawLoop(boundingBoxes, offsetX, offsetY);
     },
-    (state): number => state.offset.y
-  );
-
-  const unsub3 = store.subscribe(
-    (boundingBoxes: BoundingBoxMeasure[]) => {
-      drawLoop(boundingBoxes);
-    },
-    state => state.boundingBoxes
+    state => state.width
   );
 
   return {
     cleanup: () => {
       unsub1();
       unsub2();
-      unsub3();
     },
   };
 };
