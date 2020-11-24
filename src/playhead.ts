@@ -31,7 +31,7 @@ export const setup = () => {
   const unsub3 = store.subscribe(
     (currentPosition: number) => {
       const {
-        offsetX,
+        offset: { x: offsetX },
         currentBarStartX,
         currentBarStartMillis,
         pixelsPerMillisecond,

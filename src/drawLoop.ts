@@ -31,6 +31,11 @@ export const setup = () => {
   div = document.createElement('div');
   div.id = 'selected-bars';
   document.body.appendChild(div);
+  div.addEventListener('mousedown', e => {
+    if (e.shiftKey) {
+      store.setState({ selection: [0, 0, 0, 0] });
+    }
+  });
 
   ({
     offset: { x: offsetX, y: offsetY },

@@ -59,10 +59,10 @@ export const store = create<Store>((set, get) => ({
     set(state => {
       if (state.songState === 'play') {
         return { songState: 'pause' };
-      } else if (state.songState === 'pause') {
-        return { songState: 'play' };
+        // } else if (state.songState === 'pause') {
+        //   return { songState: 'stop' };
       }
-      return state;
+      return { songState: 'play' };
     });
   },
 }));

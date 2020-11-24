@@ -40,11 +40,14 @@ const init = async () => {
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
+    // console.log(e.code);
+    if (e.code === 'Enter') {
       store.setState({ songState: 'play' });
-    } else if (e.key === 'Space') {
+    } else if (e.code === 'Space') {
       e.preventDefault();
       store.getState().toggleSongState();
+    } else if (e.code === 'Numpad0') {
+      store.setState({ songState: 'stop' });
     }
   });
 

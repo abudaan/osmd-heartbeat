@@ -19,6 +19,7 @@ const updateSongPosition = () => {
 };
 
 const updateBar = () => {
+  // console.log('updateBar', song.bar);
   const startMillis = (song.getPosition('barsandbeats', song.bar, 0, 0, 0) as any).millis;
   const endMillis = (song.getPosition('barsandbeats', song.bar + 1, 0, 0, 0) as any).millis;
   store.setState({
@@ -54,8 +55,6 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
     track.setInstrument(instrumentName);
   });
 
-  song.addEventListener('stop', stopSong);
-
   song.addEventListener('end', stopSong);
 
   song.addEventListener('position', 'bar', updateBar);
@@ -64,7 +63,9 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
     songState => {
       if (songState === 'stop') {
         song.stop();
-        stopSong();
+        setTimeout(() => {
+          stopSong();
+        }, 10);
       } else if (songState === 'play') {
         song.play();
         raqId = requestAnimationFrame(updateSongPosition);
