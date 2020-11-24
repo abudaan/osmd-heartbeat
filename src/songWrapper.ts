@@ -56,6 +56,8 @@ const stopSong = () => {
   hasRepeated = {};
 };
 
+export const getSong = (): Heartbeat.Song => song;
+
 export const setup = async (): Promise<{ cleanup: () => void }> => {
   await sequencer.ready();
   const { midiFileName, midiFile } = store.getState();
