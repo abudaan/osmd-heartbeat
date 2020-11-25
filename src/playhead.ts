@@ -4,6 +4,7 @@ import { getPositionInMeasure } from './getPositionInMeasure';
 import { getOSMD } from './scoreWrapper';
 import { getSong } from './songWrapper';
 import { store } from './store';
+import { calculateSongPositionByScorePosition } from './calculateSongPositionByScorePosition';
 
 const divPlayhead = document.getElementById('playhead') as HTMLDivElement;
 
@@ -33,8 +34,14 @@ export const setPlayheadByPointerEvent = (e: PointerEvent) => {
   // console.log(data);
   if (data !== null) {
     const { x, y, height, width, measureNumber } = data;
+    const currentBarSong = calculateSongPositionByScorePosition(
+      store.getState().repeats,
+      measureNumber
+    );
+
     draw({ x, y, width, height });
     store.setState({
+      currentBarSong,
       currentBarStartX: x,
       pixelsPerMillisecond: width / getBarInfo(getSong(), measureNumber).durationMillis,
     });
@@ -46,7 +53,7 @@ export const setup = () => {
     (bar: number) => {
       setPlayheadByBarNumber(bar);
     },
-    state => state.currentBar
+    state => state.currentBarScore
   );
 
   const unsub2 = store.subscribe(

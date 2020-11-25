@@ -52,23 +52,15 @@ export const setup = () => {
   } = store.getState());
 
   const unsub1 = store.subscribe(
-    (x: number) => {
-      scrollPosX = x;
+    (pos: { x: number; y: number }) => {
+      ({ x: scrollPosX, y: scrollPosY } = pos);
     },
-    (state): number => state.scrollPos.x
-  );
-
-  const unsub2 = store.subscribe(
-    (y: number) => {
-      scrollPosY = y;
-    },
-    (state): number => state.scrollPos.y
+    state => state.scrollPos
   );
 
   return {
     cleanup: () => {
       unsub1();
-      unsub2();
     },
   };
 };

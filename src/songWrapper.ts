@@ -120,13 +120,14 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
   );
 
   const unsub3 = store.subscribe(
-    (currentBar: number) => {
-      if (currentBar !== song.bar) {
-        const { millis } = song.getPosition('barsandbeats', currentBar, 0, 0, 0) as any;
-        song.setPlayhead('millis', millis);
-      }
+    (bar: number) => {
+      console.log(bar);
+      // if (currentBar !== song.bar) {
+      const { millis } = song.getPosition('barsandbeats', bar, 0, 0, 0) as any;
+      song.setPlayhead('millis', millis);
+      // }
     },
-    state => state.currentBar
+    state => state.currentBarSong
   );
 
   const unsub4 = store.subscribe(

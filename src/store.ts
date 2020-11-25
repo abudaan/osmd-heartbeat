@@ -12,7 +12,7 @@ export type State = {
   mxmlFile: string;
   ppq: number;
   currentPosition: number;
-  currentBar: number;
+  currentBarSong: number;
   currentBarScore: number;
   currentBarStartX: number;
   currentBarStartMillis: number;
@@ -40,7 +40,7 @@ export const store = create<Store>((set, get) => ({
   midiFile,
   mxmlFile,
   ppq: 960,
-  currentBar: 1,
+  currentBarSong: 1,
   currentBarScore: 1,
   currentPosition: 0,
   currentBarStartX: 0,
