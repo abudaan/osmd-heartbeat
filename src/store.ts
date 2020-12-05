@@ -1,4 +1,4 @@
-import { BoundingBoxMeasure } from 'webdaw-modules';
+import { BoundingBox } from 'webdaw-modules';
 import create from 'zustand/vanilla';
 import { midiFileName, midiFile, mxmlFile } from './files';
 
@@ -23,6 +23,8 @@ export type State = {
   loaded: boolean;
   repeats: number[][];
   initialTempo: number;
+  boundingBoxesMeasures: BoundingBox[];
+  songPositionMillis: number;
 };
 
 export type Reducers = {
@@ -62,4 +64,6 @@ export const store = create<Store>((set, get) => ({
       return { songState: 'play' };
     });
   },
+  boundingBoxesMeasures: [],
+  songPositionMillis: 0,
 }));

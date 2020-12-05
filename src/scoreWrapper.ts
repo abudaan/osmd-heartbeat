@@ -2,6 +2,7 @@ import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { loadMusicXMLFile } from 'heartbeat-sequencer';
 import { parseMusicXML } from 'webdaw-modules';
 import { store } from './store';
+import { getBoundingBoxMeasureAll } from './getBoundingBoxMeasure';
 
 let scoreDiv: HTMLDivElement;
 let osmd: OpenSheetMusicDisplay;
@@ -29,18 +30,17 @@ export const setup = async (divElem: HTMLDivElement): Promise<{ cleanup: () => v
   store.setState({ repeats, initialTempo });
 
   await osmd.load(xmlDoc);
-  // osmd.GraphicSheet.MeasureList.forEach((measure, measureNumber) => {
-  //   console.log(measure, measureNumber);
-  // });
 
   const unsub1 = store.subscribe(
     () => {
       render(osmd);
+      store.setState({ boundingBoxesMeasures: getBoundingBoxMeasureAll(osmd) });
     },
     state => state.width
   );
 
   render(osmd);
+  store.setState({ boundingBoxesMeasures: getBoundingBoxMeasureAll(osmd) });
 
   return {
     cleanup: () => {

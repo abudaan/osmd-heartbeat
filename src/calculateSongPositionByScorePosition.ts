@@ -3,11 +3,17 @@ export const calculateSongPositionByScorePosition = (repeats: number[][], bar: n
     return bar;
   }
   let newBar = bar;
-  for (let i = 1; i < repeats.length; i++) {
-    if (bar >= repeats[i][0]) {
-      newBar = bar + repeats[i][0] - 1;
+  let loop = true;
+  let i = 0;
+  while (loop && i < repeats.length) {
+    const endBar = repeats[i][1];
+    if (endBar > bar) {
+      loop = false;
+    } else {
+      newBar += repeats[i][1] - repeats[i][0] + 1;
+      i++;
     }
   }
-  console.log(newBar);
+  // console.log(newBar);
   return newBar;
 };

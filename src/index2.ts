@@ -3,9 +3,10 @@ import { store } from './store';
 import { setup as setupSong } from './songWrapper';
 import { setup as setupScore } from './scoreWrapper';
 import { setup as setupControls } from './controls';
-import { setPlayheadByPointerEvent, setup as setupPlayhead } from './playhead';
+import { setup as setupPlayhead } from './playhead';
 import { setup as setupDrawLoop } from './drawLoop';
 import { setup as setupDrawSelection, startSelect } from './drawSelection';
+import { setPlayhead } from './actions/setPlayhead';
 
 const scoreDiv = document.getElementById('score') as HTMLDivElement;
 const loadingDiv = document.getElementById('loading');
@@ -55,7 +56,7 @@ const init = async () => {
     if (e.ctrlKey) {
       startSelect(e);
     } else {
-      setPlayheadByPointerEvent(e as PointerEvent);
+      setPlayhead(e as PointerEvent);
     }
   });
 

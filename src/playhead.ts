@@ -1,51 +1,31 @@
 import { getBarInfo } from './getBarInfo';
-import { getBoundingBoxMeasureAllStaves } from './getBoundingBoxMeasureAllStaves';
-import { getPositionInMeasure } from './getPositionInMeasure';
+import { getBoundingBoxMeasure } from './getBoundingBoxMeasure';
 import { getOSMD } from './scoreWrapper';
 import { getSong } from './songWrapper';
 import { store } from './store';
-import { calculateSongPositionByScorePosition } from './calculateSongPositionByScorePosition';
 
+const playheadWidth = 25;
 const divPlayhead = document.getElementById('playhead') as HTMLDivElement;
 
-const draw = (dim: { x: number; y: number; width: number; height: number }) => {
-  const { x, y, width, height } = dim;
+export const draw = (dim: { x: number; y: number; width: number; height: number }) => {
+  const { x, y, height } = dim;
   const {
     offset: { x: offsetX, y: offsetY },
   } = store.getState();
   // console.log('draw', x, y);
   divPlayhead.style.top = `${y + offsetY}px`;
-  divPlayhead.style.left = `${x + offsetX}px`;
-  divPlayhead.style.width = '10px'; //`${playhead.width}px`;
+  divPlayhead.style.left = `${x + offsetX - playheadWidth / 2}px`;
+  divPlayhead.style.width = `${playheadWidth}px`; //`${playhead.width}px`;
   divPlayhead.style.height = `${height}px`;
 };
 
 export const setPlayheadByBarNumber = (bar: number) => {
-  const { x, y, width, height } = getBoundingBoxMeasureAllStaves(getOSMD(), bar);
+  const { x, y, width, height } = getBoundingBoxMeasure(getOSMD(), bar);
   draw({ x, y, width, height });
   store.setState({
     currentBarStartX: x,
     pixelsPerMillisecond: width / getBarInfo(getSong(), bar).durationMillis,
   });
-};
-
-export const setPlayheadByPointerEvent = (e: PointerEvent) => {
-  const data = getPositionInMeasure(e, getOSMD());
-  // console.log(data);
-  if (data !== null) {
-    const { x, y, height, width, measureNumber } = data;
-    const currentBarSong = calculateSongPositionByScorePosition(
-      store.getState().repeats,
-      measureNumber
-    );
-
-    draw({ x, y, width, height });
-    store.setState({
-      currentBarSong,
-      currentBarStartX: x,
-      pixelsPerMillisecond: width / getBarInfo(getSong(), measureNumber).durationMillis,
-    });
-  }
 };
 
 export const setup = () => {

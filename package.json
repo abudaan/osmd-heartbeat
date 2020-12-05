@@ -10,6 +10,7 @@
     "opensheetmusicdisplay": "^0.8.2",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
+    "src": "^1.1.2",
     "webdaw-modules": "file:../WebDAW",
     "zustand": "^3.2.0"
   },
