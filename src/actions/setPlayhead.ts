@@ -32,9 +32,6 @@ export const setPlayhead = (e: PointerEvent) => {
 
     draw({ x: x + offset, y, width, height });
 
-    store.setState({
-      pixelsPerMillisecond,
-      // currentBarScore: measureNumber,
-    });
+    store.getState().setPixelsPerMillisecond(pixelsPerMillisecond, measureNumber);
   }
 };

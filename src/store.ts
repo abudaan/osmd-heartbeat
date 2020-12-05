@@ -25,15 +25,19 @@ export type State = {
   initialTempo: number;
   boundingBoxesMeasures: BoundingBox[];
   songPositionMillis: number;
+  playheadPositionPixels: number;
 };
 
 export type Reducers = {
   toggleSongState: () => void;
+  setPixelsPerMillisecond: (duration: number, bar: number) => void;
+  setSongPosition: (durationBarMillis: number) => void;
 };
 
 export type Store = State & Reducers;
 
 export const store = create<Store>((set, get) => ({
+  playheadPositionPixels: 0,
   offset: { x: 0, y: 0 },
   scrollPos: { x: 0, y: 0 },
   selection: [],
@@ -62,6 +66,28 @@ export const store = create<Store>((set, get) => ({
         //   return { songState: 'stop' };
       }
       return { songState: 'play' };
+    });
+  },
+  setPixelsPerMillisecond: (duration, bar) => {
+    set(state => {
+      const { width } = state.boundingBoxesMeasures[bar - 1];
+      return {
+        pixelsPerMillisecond: width / duration,
+      };
+    });
+  },
+  setSongPosition: durationBarMillis => {
+    set(state => {
+      const {
+        offset: { x: offsetX },
+        currentBarStartX,
+        currentBarStartMillis,
+        pixelsPerMillisecond,
+      } = state;
+      const relPos = durationBarMillis - currentBarStartMillis;
+      return {
+        playheadPositionPixels: offsetX + currentBarStartX + relPos * pixelsPerMillisecond,
+      };
     });
   },
   boundingBoxesMeasures: [],
