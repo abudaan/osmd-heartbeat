@@ -1,4 +1,4 @@
-export const calculateSongPositionByScorePosition = (repeats: number[][], bar: number): number => {
+export const songPositionFromScore = (repeats: number[][], bar: number): number => {
   if (repeats.length <= 1) {
     return bar;
   }

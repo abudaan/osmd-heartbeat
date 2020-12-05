@@ -24,7 +24,7 @@ import {
   BoundingBoxMeasure,
   getBoundingBoxesOfSelectedMeasures,
 } from 'webdaw-modules';
-import { loadJSON, addAssetPack, loadMIDIFile } from './heartbeat-utils';
+import { loadJSON, addAssetPack, loadMIDIFile } from './utils/heartbeat-utils';
 
 const ppq = 960;
 // const midiFileName = 'mozk545a_musescore';

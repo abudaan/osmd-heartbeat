@@ -2,7 +2,7 @@ import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { loadMusicXMLFile } from 'heartbeat-sequencer';
 import { parseMusicXML } from 'webdaw-modules';
 import { store } from './store';
-import { getBoundingBoxMeasureAll } from './getBoundingBoxMeasure';
+import { getBoundingBoxMeasureAll } from './utils/getBoundingBoxMeasure';
 
 let scoreDiv: HTMLDivElement;
 let osmd: OpenSheetMusicDisplay;

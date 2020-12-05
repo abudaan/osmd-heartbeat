@@ -26,12 +26,24 @@ export type State = {
   boundingBoxesMeasures: BoundingBox[];
   songPositionMillis: number;
   playheadPositionPixels: number;
+  playhead: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  hasRepeated: { [index: number]: boolean };
 };
 
 export type Reducers = {
   toggleSongState: () => void;
-  setPixelsPerMillisecond: (duration: number, bar: number) => void;
   setSongPosition: (durationBarMillis: number) => void;
+  setPlayheadScore: () => void;
+  updateBar: (args: {
+    currentBarScore: number;
+    currentBarDurationMillis: number;
+    currentBarStartMillis: number;
+  }) => void;
 };
 
 export type Store = State & Reducers;
@@ -58,6 +70,13 @@ export const store = create<Store>((set, get) => ({
   repeats: [],
   initialTempo: 90,
   loaded: false,
+  hasRepeated: {},
+  playhead: {
+    x: 0,
+    y: 0,
+    width: 25,
+    height: 0,
+  },
   toggleSongState: () => {
     set(state => {
       if (state.songState === 'play') {
@@ -68,11 +87,12 @@ export const store = create<Store>((set, get) => ({
       return { songState: 'play' };
     });
   },
-  setPixelsPerMillisecond: (duration, bar) => {
+  updateBar: args => {
+    const { currentBarDurationMillis, currentBarScore } = args;
     set(state => {
-      const { width } = state.boundingBoxesMeasures[bar - 1];
+      const { width } = state.boundingBoxesMeasures[currentBarScore - 1];
       return {
-        pixelsPerMillisecond: width / duration,
+        pixelsPerMillisecond: width / currentBarDurationMillis,
       };
     });
   },
@@ -86,10 +106,14 @@ export const store = create<Store>((set, get) => ({
       } = state;
       const relPos = durationBarMillis - currentBarStartMillis;
       return {
-        playheadPositionPixels: offsetX + currentBarStartX + relPos * pixelsPerMillisecond,
+        playhead: {
+          ...state.playhead,
+          x: offsetX + currentBarStartX + relPos * pixelsPerMillisecond,
+        },
       };
     });
   },
+  setPlayheadScore: () => {},
   boundingBoxesMeasures: [],
   songPositionMillis: 0,
 }));

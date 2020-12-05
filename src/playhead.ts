@@ -1,31 +1,58 @@
 import { store } from './store';
 
-const playheadWidth = 25;
 const divPlayhead = document.getElementById('playhead') as HTMLDivElement;
 
-export const draw = (dim: { x: number; y: number; width: number; height: number }) => {
-  const { x, y, height } = dim;
-  const {
-    offset: { x: offsetX, y: offsetY },
-  } = store.getState();
-  // console.log('draw', x, y);
-  divPlayhead.style.top = `${y + offsetY}px`;
-  divPlayhead.style.left = `${x + offsetX - playheadWidth / 2}px`;
-  divPlayhead.style.width = `${playheadWidth}px`; //`${playhead.width}px`;
+const draw = (dim: { x: number; y: number; width: number; height: number }) => {
+  console.log('DRAW');
+  const { x, y, width, height } = dim;
+  divPlayhead.style.top = `${y}px`;
+  divPlayhead.style.left = `${x - width / 2}px`;
+  divPlayhead.style.width = `${width}px`; //`${playhead.width}px`;
   divPlayhead.style.height = `${height}px`;
 };
 
 export const setup = () => {
-  const unsub = store.subscribe(
-    (playheadPositionPixels: number) => {
-      divPlayhead.style.left = `${playheadPositionPixels}px`;
+  const unsub1 = store.subscribe(
+    (x: number) => {
+      divPlayhead.style.left = `${x}px`;
     },
-    state => state.playheadPositionPixels
+    state => state.playhead.x
+  );
+
+  const unsub2 = store.subscribe(
+    (y: number) => {
+      divPlayhead.style.top = `${y}px`;
+    },
+    state => state.playhead.y
+  );
+
+  const unsub3 = store.subscribe(
+    (height: number) => {
+      divPlayhead.style.height = `${height}px`;
+    },
+    state => state.playhead.height
+  );
+
+  const unsub4 = store.subscribe(
+    () => {
+      const {
+        boundingBoxesMeasures,
+        currentBarScore,
+        playhead: { width },
+        offset: { x: offsetX, y: offsetY },
+      } = store.getState();
+      const { x, y, height } = boundingBoxesMeasures[currentBarScore - 1];
+      draw({ x: x + offsetX, y: y + offsetY, width, height });
+    },
+    state => state.loaded
   );
 
   return {
     cleanup: () => {
-      unsub();
+      unsub1();
+      unsub2();
+      unsub3();
+      unsub4();
     },
   };
 };
