@@ -1,3 +1,4 @@
+import { BoundingBox } from 'webdaw-modules';
 import { songPositionFromScore } from '../utils/songPositionFromScore';
 import { getBarInfo } from '../utils/getBarInfo';
 import { getBoundingBoxMeasureAll } from '../utils/getBoundingBoxMeasure';
@@ -5,6 +6,29 @@ import { getMeasureAtPoint } from '../utils/getMeasureAtPoint';
 import { getSong } from '../songWrapper';
 import { store } from '../store';
 import { getOSMD } from '../scoreWrapper';
+
+const debug = ({
+  x,
+  y,
+  width,
+  height,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}) => {
+  const d = document.createElement('div');
+  d.className = 'debug';
+  d.style.top = `${y}px`;
+  d.style.left = `${x}px`;
+  d.style.width = `${width}px`;
+  d.style.height = `${height}px`;
+  document.body.appendChild(d);
+  setTimeout(() => {
+    document.body.removeChild(d);
+  }, 1000);
+};
 
 /**
  * User clicks somewhere in the score, we translate the position where the user clicked
@@ -22,17 +46,33 @@ export const setPlayhead = (e: PointerEvent) => {
       offset,
     } = data;
 
-    const currentBarSong = songPositionFromScore(store.getState().repeats, measureNumber);
-
     const song = getSong();
+    const {
+      playhead,
+      repeats,
+      offset: { x: offsetX, y: offsetY },
+    } = store.getState();
+    const { bar: currentBarSong, hasRepeated } = songPositionFromScore(repeats, measureNumber);
     const { durationMillis, startMillis } = getBarInfo(song, currentBarSong);
     const pixelsPerMillisecond = width / durationMillis;
     const songPositionMillis = startMillis + offset / pixelsPerMillisecond;
 
-    song.setPlayhead('millis', songPositionMillis);
-    // draw({ x: x + offset, y, width, height });
+    debug({ x: x + offsetX, y: y + offsetY, height, width });
 
-    store.setState({ pixelsPerMillisecond, currentBarScore: measureNumber });
-    // store.getState().setPlayheadScore({ x: x + offset, y, width, height });
+    song.setPlayhead('millis', songPositionMillis);
+
+    store.setState({
+      pixelsPerMillisecond,
+      currentBarScore: measureNumber,
+      currentBarStartX: x,
+      currentBarStartMillis: startMillis,
+      playhead: {
+        x: x + offsetX + offset,
+        y: y + offsetY,
+        width: playhead.width,
+        height,
+      },
+      hasRepeated,
+    });
   }
 };

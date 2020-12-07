@@ -44,6 +44,7 @@ export type Reducers = {
     currentBarDurationMillis: number;
     currentBarStartMillis: number;
   }) => void;
+  updateBoundingBoxMeasures: (bbox: BoundingBox[]) => void;
 };
 
 export type Store = State & Reducers;
@@ -88,13 +89,23 @@ export const store = create<Store>((set, get) => ({
     });
   },
   updateBar: args => {
-    const { currentBarDurationMillis, currentBarScore } = args;
-    set(state => {
-      const { width } = state.boundingBoxesMeasures[currentBarScore - 1];
-      return {
-        pixelsPerMillisecond: width / currentBarDurationMillis,
-      };
-    });
+    // const { currentBarDurationMillis, currentBarScore } = args;
+    // set(state => {
+    //   const {
+    //     boundingBoxesMeasures,
+    //     offset: { x: offsetX, y: offsetY },
+    //   } = state;
+    //   const { x, y, width, height } = boundingBoxesMeasures[currentBarScore - 1];
+    //   return {
+    //     pixelsPerMillisecond: width / currentBarDurationMillis,
+    //     playhead: {
+    //       x: x + offsetX,
+    //       y: y + offsetY,
+    //       height,
+    //       width: state.playhead.width,
+    //     },
+    //   };
+    // });
   },
   setSongPosition: durationBarMillis => {
     set(state => {
@@ -109,6 +120,25 @@ export const store = create<Store>((set, get) => ({
         playhead: {
           ...state.playhead,
           x: offsetX + currentBarStartX + relPos * pixelsPerMillisecond,
+        },
+      };
+    });
+  },
+  updateBoundingBoxMeasures: boundingBoxesMeasures => {
+    set(state => {
+      const {
+        playhead: { width },
+        currentBarScore,
+        offset: { x: offsetX, y: offsetY },
+      } = state;
+      const { x, y, height } = boundingBoxesMeasures[currentBarScore - 1];
+      return {
+        boundingBoxesMeasures,
+        playhead: {
+          x: x + offsetX,
+          y: y + offsetY,
+          width,
+          height,
         },
       };
     });

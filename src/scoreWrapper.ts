@@ -27,6 +27,7 @@ export const setup = async (divElem: HTMLDivElement): Promise<{ cleanup: () => v
   const xmlDoc = await loadMusicXMLFile(mxmlFile);
   const parsed = parseMusicXML(xmlDoc, ppq);
   const { repeats, initialTempo } = parsed as any;
+  console.log(repeats);
   store.setState({ repeats, initialTempo });
 
   await osmd.load(xmlDoc);
@@ -34,13 +35,13 @@ export const setup = async (divElem: HTMLDivElement): Promise<{ cleanup: () => v
   const unsub1 = store.subscribe(
     () => {
       render(osmd);
-      store.setState({ boundingBoxesMeasures: getBoundingBoxMeasureAll(osmd) });
+      store.getState().updateBoundingBoxMeasures(getBoundingBoxMeasureAll(osmd));
     },
     state => state.width
   );
 
   render(osmd);
-  store.setState({ boundingBoxesMeasures: getBoundingBoxMeasureAll(osmd) });
+  store.getState().updateBoundingBoxMeasures(getBoundingBoxMeasureAll(osmd));
 
   return {
     cleanup: () => {

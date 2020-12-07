@@ -3,7 +3,6 @@ import { store } from './store';
 const divPlayhead = document.getElementById('playhead') as HTMLDivElement;
 
 const draw = (dim: { x: number; y: number; width: number; height: number }) => {
-  console.log('DRAW');
   const { x, y, width, height } = dim;
   divPlayhead.style.top = `${y}px`;
   divPlayhead.style.left = `${x - width / 2}px`;
@@ -35,14 +34,8 @@ export const setup = () => {
 
   const unsub4 = store.subscribe(
     () => {
-      const {
-        boundingBoxesMeasures,
-        currentBarScore,
-        playhead: { width },
-        offset: { x: offsetX, y: offsetY },
-      } = store.getState();
-      const { x, y, height } = boundingBoxesMeasures[currentBarScore - 1];
-      draw({ x: x + offsetX, y: y + offsetY, width, height });
+      const { playhead } = store.getState();
+      draw(playhead);
     },
     state => state.loaded
   );
