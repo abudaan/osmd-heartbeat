@@ -3,6 +3,7 @@ import { store } from './store';
 import { setup as setupSong } from './songWrapper';
 import { setup as setupScore } from './scoreWrapper';
 import { setup as setupControls } from './controls';
+import { setup as setupDebug } from './debug';
 import { setup as setupPlayhead } from './playhead';
 import { setup as setupDrawLoop } from './drawLoop';
 import { setup as setupDrawSelection, startSelect } from './drawSelection';
@@ -28,6 +29,7 @@ const init = async () => {
   await setupSong();
   await setupScore(scoreDiv);
   setupControls();
+  setupDebug();
   setupPlayhead();
   setupDrawLoop();
   setupDrawSelection();

@@ -73,7 +73,7 @@ body
   background-color rgba(255, 0, 0, 0.3)
 
 #controls
-  height: 90px
+  height: 110px
   background-color rgba(0, 0, 0, 0.3)
 
 #score
@@ -81,6 +81,18 @@ body
     // background-color pink
 
 
+
+@keyframes fadeOutAnim 
+  0% 
+    opacity 1
+  100% 
+    opacity 0
+
 .debug 
   position absolute
   background-color rgba(255, 0, 127, 0.3)
+  animation-duration 1s
+
+
+.fadeOut
+  animation-name fadeOutAnim

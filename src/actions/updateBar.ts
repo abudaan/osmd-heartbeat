@@ -24,23 +24,21 @@ export const updateBar = () => {
 
   // console.log('updateBar', hasRepeatedClone, song.bar, bar);
 
-  try {
-    const { x, y, width, height } = boundingBoxesMeasures[bar - 1];
-    const { durationMillis, startMillis } = getBarInfo(song, song.bar);
-    const pixelsPerMillisecond = width / durationMillis;
-    store.setState({
-      pixelsPerMillisecond,
-      playhead: {
-        x: x + offsetX,
-        y: y + offsetY,
-        height,
-        width: playhead.width,
-      },
-      currentBarStartX: x,
-      currentBarStartMillis: startMillis,
-      hasRepeated: hasRepeatedClone,
-    });
-  } catch (e) {
-    console.log(e);
-  }
+  const { x, y, width, height } = boundingBoxesMeasures[bar - 1];
+  const { durationMillis, startMillis } = getBarInfo(song, song.bar);
+  const pixelsPerMillisecond = width / durationMillis;
+  store.setState({
+    pixelsPerMillisecond,
+    playhead: {
+      x: x + offsetX,
+      y: y + offsetY,
+      height,
+      width: playhead.width,
+    },
+    currentBarScore: bar,
+    currentBarSong: song.bar,
+    currentBarStartX: x,
+    currentBarStartMillis: startMillis,
+    hasRepeated: hasRepeatedClone,
+  });
 };

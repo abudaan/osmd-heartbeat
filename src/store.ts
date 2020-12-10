@@ -37,13 +37,6 @@ export type State = {
 
 export type Reducers = {
   toggleSongState: () => void;
-  setSongPosition: (durationBarMillis: number) => void;
-  setPlayheadScore: () => void;
-  updateBar: (args: {
-    currentBarScore: number;
-    currentBarDurationMillis: number;
-    currentBarStartMillis: number;
-  }) => void;
   updateBoundingBoxMeasures: (bbox: BoundingBox[]) => void;
 };
 
@@ -88,42 +81,6 @@ export const store = create<Store>((set, get) => ({
       return { songState: 'play' };
     });
   },
-  updateBar: args => {
-    // const { currentBarDurationMillis, currentBarScore } = args;
-    // set(state => {
-    //   const {
-    //     boundingBoxesMeasures,
-    //     offset: { x: offsetX, y: offsetY },
-    //   } = state;
-    //   const { x, y, width, height } = boundingBoxesMeasures[currentBarScore - 1];
-    //   return {
-    //     pixelsPerMillisecond: width / currentBarDurationMillis,
-    //     playhead: {
-    //       x: x + offsetX,
-    //       y: y + offsetY,
-    //       height,
-    //       width: state.playhead.width,
-    //     },
-    //   };
-    // });
-  },
-  setSongPosition: durationBarMillis => {
-    set(state => {
-      const {
-        offset: { x: offsetX },
-        currentBarStartX,
-        currentBarStartMillis,
-        pixelsPerMillisecond,
-      } = state;
-      const relPos = durationBarMillis - currentBarStartMillis;
-      return {
-        playhead: {
-          ...state.playhead,
-          x: offsetX + currentBarStartX + relPos * pixelsPerMillisecond,
-        },
-      };
-    });
-  },
   updateBoundingBoxMeasures: boundingBoxesMeasures => {
     set(state => {
       const {
@@ -143,7 +100,6 @@ export const store = create<Store>((set, get) => ({
       };
     });
   },
-  setPlayheadScore: () => {},
   boundingBoxesMeasures: [],
   songPositionMillis: 0,
 }));

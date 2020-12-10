@@ -1,3 +1,4 @@
+import { stopSong } from './actions/stopSong';
 import { store } from './store';
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
@@ -40,9 +41,17 @@ export const setup = () => {
   });
 
   btnStop.addEventListener('click', () => {
-    const state = store.getState().songState;
-    if (state === 'play') {
-      store.setState({ songState: 'stop' });
-    }
+    // const state = store.getState().songState;
+    // if (state === 'play') {
+    //   store.setState({ songState: 'stop' });
+    // }
+    stopSong();
   });
+
+  return {
+    cleanup: () => {
+      unsub1();
+      unsub2();
+    },
+  };
 };

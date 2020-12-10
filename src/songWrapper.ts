@@ -4,6 +4,7 @@ import { stopSong } from './actions/stopSong';
 import { updateBar } from './actions/updateBar';
 import { loadJSON, addAssetPack, loadMIDIFile } from './utils/heartbeat-utils';
 import { store } from './store';
+import { setSongPosition } from './actions/setSongPosition';
 
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
@@ -14,7 +15,7 @@ let song: Heartbeat.Song;
 let keyEditor: Heartbeat.KeyEditor;
 
 const updateSongPosition = () => {
-  store.getState().setSongPosition(song.millis);
+  setSongPosition(song.millis);
   raqId = requestAnimationFrame(updateSongPosition);
 };
 

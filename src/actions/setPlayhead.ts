@@ -1,4 +1,3 @@
-import { BoundingBox } from 'webdaw-modules';
 import { songPositionFromScore } from '../utils/songPositionFromScore';
 import { getBarInfo } from '../utils/getBarInfo';
 import { getBoundingBoxMeasureAll } from '../utils/getBoundingBoxMeasure';
@@ -19,7 +18,7 @@ const debug = ({
   height: number;
 }) => {
   const d = document.createElement('div');
-  d.className = 'debug';
+  d.className = 'debug fadeOut';
   d.style.top = `${y}px`;
   d.style.left = `${x}px`;
   d.style.width = `${width}px`;
@@ -50,9 +49,15 @@ export const setPlayhead = (e: PointerEvent) => {
     const {
       playhead,
       repeats,
+      hasRepeated,
       offset: { x: offsetX, y: offsetY },
     } = store.getState();
-    const { bar: currentBarSong, hasRepeated } = songPositionFromScore(repeats, measureNumber);
+
+    const { bar: currentBarSong, hasRepeated: hasRepeatedClone } = songPositionFromScore(
+      repeats,
+      hasRepeated,
+      measureNumber
+    );
     const { durationMillis, startMillis } = getBarInfo(song, currentBarSong);
     const pixelsPerMillisecond = width / durationMillis;
     const songPositionMillis = startMillis + offset / pixelsPerMillisecond;
@@ -63,6 +68,7 @@ export const setPlayhead = (e: PointerEvent) => {
 
     store.setState({
       pixelsPerMillisecond,
+      currentBarSong,
       currentBarScore: measureNumber,
       currentBarStartX: x,
       currentBarStartMillis: startMillis,
@@ -72,7 +78,7 @@ export const setPlayhead = (e: PointerEvent) => {
         width: playhead.width,
         height,
       },
-      hasRepeated,
+      hasRepeated: hasRepeatedClone,
     });
   }
 };

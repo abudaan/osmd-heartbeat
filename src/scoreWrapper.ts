@@ -28,7 +28,10 @@ export const setup = async (divElem: HTMLDivElement): Promise<{ cleanup: () => v
   const parsed = parseMusicXML(xmlDoc, ppq);
   const { repeats, initialTempo } = parsed as any;
   console.log(repeats);
-  store.setState({ repeats, initialTempo });
+  store.setState({
+    repeats,
+    initialTempo,
+  });
 
   await osmd.load(xmlDoc);
 
