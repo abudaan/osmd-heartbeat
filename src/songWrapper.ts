@@ -7,8 +7,8 @@ import { store } from './store';
 import { setSongPosition } from './actions/setSongPosition';
 
 const instrumentName = 'TP00-PianoStereo';
-const instrumentOgg = `../assets/${instrumentName}.ogg.json`;
-const instrumentMp3 = `../assets/${instrumentName}.mp3.json`;
+const instrumentOgg = `./assets/${instrumentName}.ogg.json`;
+const instrumentMp3 = `./assets/${instrumentName}.mp3.json`;
 
 let raqId: number;
 let song: Heartbeat.Song;

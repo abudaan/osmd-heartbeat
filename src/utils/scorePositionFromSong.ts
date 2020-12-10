@@ -18,16 +18,16 @@ export const scorePositionFromSong = (
   }
   const hasRepeatedClone = { ...hasRepeated };
 
+  let newBar = barSong;
   for (let i = 0; i < repeats.length; i++) {
     const repeat = repeats[i];
-    if (barSong > repeat[1]) {
+    if (newBar > repeat[1]) {
       if (hasRepeatedClone[i] !== true) {
         hasRepeatedClone[i] = true;
       }
     }
   }
 
-  let newBar = barSong;
   for (let i = 0; i < repeats.length; i++) {
     const repeat = repeats[i];
     if (hasRepeatedClone[i] === true) {
