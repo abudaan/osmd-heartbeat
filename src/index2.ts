@@ -62,10 +62,6 @@ const init = async () => {
     }
   });
 
-  document.addEventListener('mouseup', e => {
-    store.setState({ selection: [0, 0, 0, 0] });
-  });
-
   // main loop during playback
   store.subscribe(
     songState => {

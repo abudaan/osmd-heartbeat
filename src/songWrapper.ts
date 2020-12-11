@@ -1,10 +1,10 @@
 import sequencer from 'heartbeat-sequencer';
 import { BoundingBoxMeasure } from 'webdaw-modules';
-import { stopSong } from './actions/stopSong';
 import { updateBar } from './actions/updateBar';
 import { loadJSON, addAssetPack, loadMIDIFile } from './utils/heartbeat-utils';
 import { store } from './store';
 import { setSongPosition } from './actions/setSongPosition';
+import { songPositionFromScore } from './utils/songPositionFromScore';
 
 const instrumentName = 'TP00-PianoStereo';
 const instrumentOgg = `./assets/${instrumentName}.ogg.json`;
@@ -20,6 +20,13 @@ const updateSongPosition = () => {
 };
 
 export const getSong = (): Heartbeat.Song => song;
+
+export const stopSong = () => {
+  cancelAnimationFrame(raqId);
+  song.stop();
+  updateBar();
+  store.setState({ songState: 'stop', currentBarSong: song.bar });
+};
 
 export const setup = async (): Promise<{ cleanup: () => void }> => {
   await sequencer.ready();
@@ -43,7 +50,6 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
   });
 
   song.addEventListener('end', () => {
-    cancelAnimationFrame(raqId);
     stopSong();
   });
 
@@ -52,7 +58,7 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
   const unsub1 = store.subscribe(
     songState => {
       if (songState === 'stop') {
-        song.stop();
+        stopSong();
       } else if (songState === 'play') {
         song.play();
         raqId = requestAnimationFrame(updateSongPosition);
@@ -65,21 +71,35 @@ export const setup = async (): Promise<{ cleanup: () => void }> => {
   );
 
   const unsub2 = store.subscribe(
-    (boundingBoxes: BoundingBoxMeasure[]) => {
-      if (boundingBoxes.length > 0) {
-        let left = boundingBoxes[0].measureNumber;
-        let right = boundingBoxes[boundingBoxes.length - 1].measureNumber + 1;
-        const leftPos = song.getPosition('barsbeats', left, 1, 1, 0);
-        const rightPos = song.getPosition('barsbeats', right, 1, 1, 0);
+    (measures: number[]) => {
+      if (measures.length > 0) {
+        console.log('LOOP', measures);
+        const { repeats, hasRepeated } = store.getState();
+        const { barSong: leftBar } = songPositionFromScore(
+          repeats,
+          hasRepeated,
+          Math.min(...measures)
+        );
+        const leftPos = song.getPosition('barsbeats', leftBar, 1, 1, 0);
+
+        const { barSong: rightBar } = songPositionFromScore(
+          repeats,
+          hasRepeated,
+          Math.max(...measures) + 1
+        );
+        const rightPos = song.getPosition('barsbeats', rightBar, 1, 1, 0);
+
         song.setLeftLocator('ticks', leftPos.ticks);
         song.setRightLocator('ticks', rightPos.ticks);
         song.setPlayhead('ticks', leftPos.ticks);
         song.setLoop(true);
+        // store.setState({ currentBarSong: song.bar });
+        updateBar();
       } else {
         song.setLoop(false);
       }
     },
-    state => state.boundingBoxes
+    state => state.selectedMeasures
   );
 
   return {

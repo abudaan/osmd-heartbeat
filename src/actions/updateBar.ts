@@ -22,7 +22,7 @@ export const updateBar = () => {
     song.bar
   );
 
-  // console.log('updateBar', hasRepeatedClone, song.bar, bar);
+  console.log('updateBar', hasRepeatedClone, 'song', song.bar, 'score', bar);
 
   const { x, y, width, height } = boundingBoxesMeasures[bar - 1];
   const { durationMillis, startMillis } = getBarInfo(song, song.bar);

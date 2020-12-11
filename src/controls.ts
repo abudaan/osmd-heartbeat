@@ -1,8 +1,9 @@
-import { stopSong } from './actions/stopSong';
+import { stopSong } from './songWrapper';
 import { store } from './store';
 
 const btnPlay = document.getElementById('play') as HTMLButtonElement;
 const btnStop = document.getElementById('stop') as HTMLButtonElement;
+const btnReset = document.getElementById('reset') as HTMLButtonElement;
 
 export const setup = () => {
   btnPlay.disabled = true;
@@ -26,6 +27,7 @@ export const setup = () => {
       if (loaded) {
         btnPlay.disabled = false;
         btnStop.disabled = false;
+        btnReset.disabled = false;
       }
     },
     state => state.loaded
@@ -46,6 +48,10 @@ export const setup = () => {
     //   store.setState({ songState: 'stop' });
     // }
     stopSong();
+  });
+
+  btnReset.addEventListener('click', () => {
+    store.setState({ hasRepeated: {} });
   });
 
   return {

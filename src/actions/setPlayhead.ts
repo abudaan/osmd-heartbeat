@@ -53,7 +53,7 @@ export const setPlayhead = (e: PointerEvent) => {
       offset: { x: offsetX, y: offsetY },
     } = store.getState();
 
-    const { bar: currentBarSong, hasRepeated: hasRepeatedClone } = songPositionFromScore(
+    const { barSong: currentBarSong, hasRepeated: hasRepeatedClone } = songPositionFromScore(
       repeats,
       hasRepeated,
       measureNumber
