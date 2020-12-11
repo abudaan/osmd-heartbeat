@@ -43,7 +43,7 @@ export const songPositionFromScore = (
     }
   }
 
-  console.log(newBar, hasRepeatedClone);
+  // console.log(newBar, hasRepeatedClone);
   return { bar: newBar, hasRepeated: hasRepeatedClone };
 };
 
