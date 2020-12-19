@@ -32,6 +32,13 @@ export const setup = () => {
     state => state.currentBarSong
   );
 
+  const unsub2 = store.subscribe(
+    () => {
+      hasRepeated.innerHTML = `${getRepeated()}`;
+    },
+    state => state.hasRepeated
+  );
+
   const unsub3 = store.subscribe(
     () => {
       songBar.innerHTML = `${store.getState().currentBarSong}`;
@@ -44,6 +51,7 @@ export const setup = () => {
   return {
     cleanup: () => {
       unsub1();
+      unsub2();
       unsub3();
     },
   };
