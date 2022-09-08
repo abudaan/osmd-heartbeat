@@ -7,7 +7,7 @@
     "@types/ramda": "^0.26.9",
     "@types/webmidi": "^2.0.3",
     "heartbeat-sequencer": "0.0.24",
-    "opensheetmusicdisplay": "^0.8.2",
+    "opensheetmusicdisplay": "^1.5.3",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
     "src": "^1.1.2",
